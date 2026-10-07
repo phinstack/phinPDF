@@ -3,7 +3,7 @@
 A free, open-source PDF viewer and editor that runs in a web browser and as a desktop app
 (Windows and Linux) from a single codebase. On macOS, use the web version.
 
-**Status:** Phase 1 (foundation). The app opens a PDF and shows its first page in
+**Status:** Phase 1 (foundation) complete, CI green on Linux and Windows. The app opens a PDF and shows its first page in
 the browser and on the desktop. See [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) for
 the roadmap.
 
