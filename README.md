@@ -1,7 +1,7 @@
 # phinPDF
 
 A free, open-source PDF viewer and editor that runs in a web browser and as a desktop app
-(Windows, macOS, Linux) from a single codebase.
+(Windows and Linux) from a single codebase. On macOS, use the web version.
 
 **Status:** planning. See [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) for the
 roadmap, tech stack, testing strategy, security assessment, and user-testing plan.

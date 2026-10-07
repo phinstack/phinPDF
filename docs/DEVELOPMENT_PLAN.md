@@ -5,7 +5,8 @@
 Build a PDF viewer and editor that:
 
 - Runs in a **web browser** (no install, works offline as a PWA) and as a **desktop app**
-  (Windows, macOS, Linux) from **one shared codebase**.
+  (Windows and Linux) from **one shared codebase**. macOS users can use the web version.
+  A native macOS app is deferred until after 1.0.
 - Lets users **view** (render, zoom, search, navigate, print) and **edit** (annotate,
   fill forms, sign, reorder/rotate/delete/merge pages, add text and images, redact) PDFs.
 - Processes documents **locally**. Files never leave the user's device unless the user
@@ -20,6 +21,8 @@ Build a PDF viewer and editor that:
   This is very hard in PDF. **Confirmed** as post-1.0 work (see Phase 9).
 - Cloud storage, accounts, real-time collaboration.
 - OCR of scanned documents (candidate for v2).
+- A native macOS desktop app (Apple Developer account and notarization are not funded for
+  1.0). The web version works in Safari and other browsers on macOS.
 - Mobile-native apps. The web build should still be usable on tablets.
 
 ---
@@ -139,7 +142,7 @@ wireframes reviewed with at least 3 potential users.
 2. Tooling: TypeScript strict, ESLint (including `eslint-plugin-security`), Prettier,
    Husky pre-commit hooks, Conventional Commits.
 3. **CI pipeline (GitHub Actions)** on every PR:
-   - lint → typecheck → unit tests with coverage → build web → build desktop (3 OSes)
+   - lint → typecheck → unit tests with coverage → build web → build desktop (Windows + Linux)
    - **CodeQL** static analysis
    - **Dependency scanning** (Dependabot + `pnpm audit`, `cargo audit`)
    - **Secret scanning**
@@ -153,7 +156,7 @@ wireframes reviewed with at least 3 potential users.
 7. Implement `packages/platform` interfaces with stub web and desktop implementations.
 
 **Exit gate:** A "hello world" app builds and deploys to a preview URL from CI, and a
-desktop build artifact is produced for all 3 OSes.
+desktop build artifact is produced for Windows and Linux.
 
 ---
 
@@ -181,7 +184,9 @@ desktop build artifact is produced for all 3 OSes.
 
 **Unit tests:** renderer wrapper (open, page count, render calls, error handling for
 corrupt files), search logic, zoom math, navigation state, password flow.
-**E2E tests:** open → scroll → search → zoom → print-preview across Chromium, Firefox, WebKit.
+**E2E tests:** open → scroll → search → zoom → print-preview in Chromium (Chrome/Edge),
+Firefox, and WebKit. All three must pass. WebKit is required because the Linux desktop app
+runs on WebKitGTK, even though Safari itself is not a focus.
 **Performance budgets:** first page visible in under 1 s for a 10 MB PDF; smooth scrolling
 on a 1,000-page document; memory under 500 MB.
 
@@ -201,14 +206,15 @@ coverage ≥ 80% in `core` and `renderer`, performance budgets met.
 - **Signatures:** draw, type, or upload an image, then place it on the page.
   (Cryptographic digital signatures come in v2.)
 - Undo/redo for every action (command pattern in `core`)
-- **Save** as standard PDF annotations so Acrobat, Preview, and others can read them.
+- **Save** as standard PDF annotations so Acrobat, Edge, Okular, and others can read them.
   Use incremental save where possible.
 
 **Unit tests:** every edit command (apply / undo / redo / serialize), coordinate
 transforms (screen ↔ PDF user space, including rotated pages), form-field value
 round-trips, save → reopen round-trip tests that assert annotations survive.
 **Interoperability tests:** save in phinPDF, then check the file in Acrobat Reader,
-macOS Preview, Chrome, and Firefox (manual checklist plus automated reopen in PDF.js).
+Microsoft Edge, Okular/Evince (Linux), Chrome, and Firefox (manual checklist plus automated
+reopen in PDF.js).
 
 **Exit gate:** Annotated and form-filled files round-trip without loss and render
 correctly in at least 3 other viewers.
@@ -239,23 +245,22 @@ automated extraction tests.
 ### Phase 5 — Desktop App (2–3 weeks)
 
 1. Wrap `apps/web` in Tauri 2. Implement the `platform` desktop adapter: native open/save
-   dialogs, file associations (`.pdf`), "Open with", drag onto the dock/taskbar icon,
+   dialogs, file associations (`.pdf`), "Open with", drag onto the taskbar icon,
    native print, native menus and shortcuts.
 2. **Lock down Tauri:** minimal capability set, file-system scope limited to files the user
    explicitly picks, strict CSP, no remote content loaded into the webview.
 3. Auto-updater with **signed updates**.
-4. **Code signing:** Windows (Authenticode), macOS (Developer ID + notarization), Linux
-   (signed AppImage/deb/rpm, optionally Flatpak). The app is free, but signing has some
-   costs. Windows signing can be free through the **SignPath Foundation** program for
-   open-source projects. macOS needs an Apple Developer account (US$99/year). Without it,
-   unsigned macOS builds still work, but users must approve them manually. Linux signing
-   is free (GPG). Flathub and winget are free distribution channels.
-5. Installers: `.msi`/`.exe`, `.dmg`, `.AppImage`/`.deb`/`.rpm`.
+4. **Code signing:** Windows (Authenticode) through the **SignPath Foundation** program,
+   which is free for open-source projects. Linux packages signed with GPG (free). Without
+   Windows signing, SmartScreen warns users on first install, so apply early (Phase 1).
+   Flathub and winget are free distribution channels.
+5. Installers: Windows `.msi`/`.exe`; Linux `.AppImage`/`.deb`/`.rpm` and Flatpak.
 
 **Tests:** `cargo test` for Rust commands, Playwright E2E against the desktop build,
-manual smoke tests on each OS (including Windows on ARM and Apple Silicon).
+manual smoke tests on Windows 10/11 (x64 and ARM) and major Linux desktops (Ubuntu/GNOME,
+Fedora, KDE Plasma; X11 and Wayland).
 
-**Exit gate:** Signed installers for all 3 OSes install, open files by double-click,
+**Exit gate:** Signed Windows and Linux installers install, open files by double-click,
 and auto-update from a test release.
 
 ---
@@ -287,7 +292,7 @@ crash-free sessions ≥ 99.5% in beta.
 - Docs: user guide, keyboard shortcut reference, FAQ, privacy policy, security policy
   (`SECURITY.md` with a vulnerability disclosure process)
 - Publish: web (production URL), desktop (GitHub Releases + website; optionally Microsoft
-  Store, Mac App Store, Flathub)
+  Store, winget, Flathub)
 - Changelog, release notes, launch announcement
 - On-call / triage rota for launch week
 
@@ -302,6 +307,7 @@ crash-free sessions ≥ 99.5% in beta.
 - Compare two PDFs (visual diff)
 - Plugin / scripting API
 - Optional cloud sync / sharing
+- Native macOS desktop app (needs an Apple Developer account for signing and notarization)
 
 ---
 
@@ -314,7 +320,7 @@ crash-free sessions ≥ 99.5% in beta.
 | **Unit** | Vitest | Pure functions, edit commands, document model, coordinate math, platform adapters (mocked) | ≥ 85% line coverage in `core`, ≥ 80% overall. Required on every PR |
 | **Component** | Vitest + Testing Library | React components (toolbar, dialogs, panels) and accessibility assertions (`jest-axe`) | Every interactive component |
 | **Integration** | Vitest (Node + real PDF.js/pdf-lib) | Open → edit → save → reopen round-trips against the corpus | Every edit feature |
-| **E2E** | Playwright | Real user flows in Chromium, Firefox, WebKit, and the Tauri build | Every user story's acceptance criteria |
+| **E2E** | Playwright | Real user flows in Chromium, Firefox, and WebKit (needed for the Linux desktop app's WebKitGTK), and the Tauri build on Windows and Linux | Every user story's acceptance criteria |
 | **Visual regression** | Playwright screenshots | Rendered pages and UI compared to baselines | Corpus sample + key screens |
 | **Fuzz** | jazzer.js / custom mutator | Feed mutated PDFs to the parser and editor | Runs nightly, see §5 |
 | **Performance** | Playwright + custom benchmarks | Load time, scroll FPS, memory | Budgets enforced in CI |
@@ -399,7 +405,7 @@ and **data leaks**.
 | **Usability round 1** | End of Phase 2 | 5–6 users | Moderated remote sessions (45 min), task-based | Viewer usability |
 | **Usability round 2** | End of Phase 4 | 5–6 *new* users | Moderated, task-based | Annotation, forms, page-editing usability |
 | **Closed alpha** | Phase 7, weeks 1–2 | 15–30 invited users | Real-world use, in-app feedback button, weekly survey | Find bugs and workflow gaps |
-| **Accessibility audit** | Phase 7 | Users of screen readers (NVDA, VoiceOver, JAWS) and keyboard-only users + automated axe scans | Task-based + WCAG 2.2 AA checklist | Accessibility compliance |
+| **Accessibility audit** | Phase 7 | Users of screen readers (NVDA and JAWS on Windows, Orca on Linux) and keyboard-only users + automated axe scans | Task-based + WCAG 2.2 AA checklist | Accessibility compliance |
 | **Public beta** | Phase 7, weeks 3–6 | Open sign-up | Opt-in, privacy-respecting crash reporting and anonymous usage metrics; feedback forum | Scale testing, stability, compatibility with real-world PDFs |
 
 ### 6.2 Core test tasks (examples)
@@ -414,7 +420,7 @@ and **data leaks**.
 ### 6.3 Metrics and success criteria
 
 - **Task success rate** ≥ 90% on core tasks
-- **Time on task** compared to a baseline (for example Acrobat Reader / Preview)
+- **Time on task** compared to a baseline (for example Acrobat Reader / the Edge PDF viewer)
 - **System Usability Scale (SUS)** ≥ 75 (above-average usability)
 - **Error rate** and number of times users ask for help
 - **Crash-free sessions** ≥ 99.5% in beta
@@ -436,7 +442,8 @@ with a 1-page summary in `docs/research/`.
   - [ ] Acceptance criteria met
   - [ ] Unit + integration tests written, coverage thresholds met
   - [ ] E2E test for the user flow
-  - [ ] Works in web (Chromium, Firefox, Safari) **and** desktop
+  - [ ] Works in web (Chromium/Edge and Firefox; Safari best effort) **and** desktop
+        (Windows and Linux)
   - [ ] Keyboard-accessible, passes axe checks
   - [ ] No new CodeQL/Semgrep/audit findings
   - [ ] Docs/changelog updated
@@ -454,7 +461,8 @@ with a 1-page summary in `docs/research/`.
 | PDF.js security vulnerabilities | User compromise | Pin and patch quickly, disable eval/JS, fuzzing, CSP |
 | Real-world PDFs break the app | Bad reviews | Large corpus, fuzzing, beta crash reports, graceful error UI |
 | Browser API gaps (for example File System Access API missing in Firefox/Safari) | Worse web UX | Fallback to download/upload in the `platform` adapter |
-| Code-signing cost and setup time | Release delay | Apply to SignPath Foundation (free for OSS) and decide on the Apple account in Phase 1 |
+| The desktop app uses a different web engine on each OS: WebView2 (Chromium) on Windows, WebKitGTK on Linux. WebKitGTK is often older and slower | Rendering or performance bugs only on Linux | WebKit runs in the required E2E suite, Linux desktop smoke tests every release, performance budgets checked on Linux too |
+| Code-signing cost and setup time | Release delay | Apply to SignPath Foundation (free for OSS) in Phase 1 |
 | A copyleft dependency slips in (including through sub-dependencies) | Can't be distributed under Apache-2.0 | License allowlist enforced in CI, SBOM reviewed each release (ADR-0001) |
 
 ---
@@ -464,8 +472,8 @@ with a 1-page summary in `docs/research/`.
 1. ~~Confirm the 1.0 scope~~ **Done:** editing existing text is deferred until after 1.0.
 2. ~~Decide the project license~~ **Done:** Apache-2.0, permissive dependencies only
    (ADR-0001).
-3. Apply to SignPath Foundation for free Windows code signing, and decide whether to buy
-   an Apple Developer account.
+3. ~~Decide on macOS~~ **Done:** no native macOS app for 1.0. Focus on Windows, Linux,
+   and the browser. Apply to SignPath Foundation for free Windows code signing.
 4. Start Phase 0: personas, competitive review, requirements backlog.
 5. Run the three technical spikes.
 6. Scaffold the monorepo and CI (Phase 1).
