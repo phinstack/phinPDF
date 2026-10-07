@@ -16,15 +16,16 @@ commercial license.
 1. **Project license: Apache-2.0.**
    - Lets anyone use, modify, and redistribute the code for free, including commercially.
    - Includes an explicit **patent grant**, which matters in the document-format space.
-   - Matches PDF.js (Apache-2.0), our main dependency. Tauri (MIT/Apache-2.0) and
-     pdf-lib (MIT) are also compatible.
-2. **Dependencies must be permissively licensed.** Allowed: MIT, BSD-2-Clause,
-   BSD-3-Clause, Apache-2.0, ISC, Zlib, 0BSD, Unicode-DFS/Unicode-3.0, CC0-1.0, and
-   MPL-2.0 (only if its files are used unmodified). Fonts: SIL OFL-1.1 or Apache-2.0.
+   - Matches PDF.js (Apache-2.0) and PDFium (Apache-2.0), our main dependencies. Tauri
+     (MIT/Apache-2.0) is also compatible.
+2. **Dependencies must be permissively licensed.** Allowed: MIT, MIT-0, BSD-2-Clause,
+   BSD-3-Clause, Apache-2.0 (including `WITH LLVM-exception`), ISC, Zlib, 0BSD,
+   Unicode-DFS/Unicode-3.0, CC0-1.0, and MPL-2.0 (only if its files are used unmodified).
+   A dual-licensed package is fine when at least one of its options is allowed. Fonts: SIL OFL-1.1 or Apache-2.0.
    **Not allowed:** GPL, LGPL, AGPL, SSPL, BUSL, "non-commercial" licenses, and
    unlicensed code.
-3. **Editing engine:** pdf-lib (MIT), with PDFium-WASM (BSD-3/Apache-2.0) as the
-   fallback. MuPDF.js is rejected because it is AGPL.
+3. **Editing engine:** PDFium-WASM (MIT wrapper, Apache-2.0 PDFium). See ADR-0004.
+   MuPDF.js is rejected because it is AGPL.
 4. **Enforcement:**
    - CI fails on any dependency outside the allowlist (`license-checker` for npm,
      `cargo deny` for Rust).

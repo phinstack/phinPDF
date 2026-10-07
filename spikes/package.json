@@ -1,0 +1,15 @@
+{
+  "name": "phinpdf-spikes",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway Phase 0 technical spikes. Not production code.",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@cantoo/pdf-lib": "^2.11.1",
+    "@embedpdf/pdfium": "^2.15.1",
+    "@tauri-apps/cli": "^2.12.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.4.299",
+    "playwright-core": "1.56"
+  }
+}

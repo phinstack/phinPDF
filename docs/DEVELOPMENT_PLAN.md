@@ -36,8 +36,8 @@ for both targets.
 |---|---|---|
 | Language | **TypeScript** (strict mode) | Runs natively in browsers, strong typing, best PDF library ecosystem for the web |
 | UI framework | **React** + **Vite** | Mature, fast builds, large hiring/help pool |
-| Rendering | **PDF.js** (Mozilla, Apache-2.0) | Battle-tested (powers Firefox's viewer), text layer, search, forms, accessibility |
-| Editing / writing | **pdf-lib** (MIT) for page ops, forms, and annotation writing. **PDFium-WASM** (BSD-3/Apache-2.0) as the fallback for harder cases | pdf-lib is pure JS and easy to sandbox. PDFium gives deeper editing and is also permissively licensed |
+| Rendering | **PDF.js** (Mozilla, Apache-2.0), legacy build (ADR-0007) | Battle-tested (powers Firefox's viewer), text layer, search, forms, accessibility |
+| Editing / writing | **PDFium-WASM** (`@embedpdf/pdfium`: MIT wrapper, Apache-2.0 PDFium) for annotations, forms, page ops, redaction, and saving (ADR-0004) | Chrome's PDF engine. In the spikes it was the only option that kept encryption, did true redaction, and saved fastest. pdf-lib is unmaintained since 2022 |
 | State | **Zustand** + a command/undo stack | Simple, testable, makes undo/redo easy |
 | Desktop shell | **Tauri 2** (Rust) | ~10 MB installers vs ~150 MB for Electron, locked-down IPC, OS webview |
 | Web deployment | Static hosting + **PWA** (service worker) | Offline use, "install" from the browser, no backend needed |
@@ -115,16 +115,18 @@ not only in the dedicated phases.
    Could / Won't). Each feature gets user stories with acceptance criteria.
 4. **Architecture Decision Records (ADRs)** in `docs/adr/`:
    - ADR-0001: License and dependency policy (**decided:** Apache-2.0, permissive deps only)
-   - ADR-0002: TypeScript + React + Vite
-   - ADR-0003: Tauri vs Electron for desktop
-   - ADR-0004: Editing engine (pdf-lib, with PDFium-WASM as fallback)
-   - ADR-0005: Platform abstraction layer design
-   - ADR-0006: Local-only processing (no server)
-5. **Technical spikes** (throwaway prototypes, 1–2 days each):
-   - Render a 500-page PDF with PDF.js and measure memory and scroll speed.
-   - Use pdf-lib to add an annotation and save, then reopen in Acrobat and confirm it
-     looks right.
-   - Run a Tauri hello-world that opens a file through IPC.
+   - ADR-0002: TypeScript + React + Vite (**done**)
+   - ADR-0003: Tauri for desktop (**done**)
+   - ADR-0004: Editing engine: PDFium-WASM (**done**, changed from pdf-lib after spike 2)
+   - ADR-0005: Platform abstraction layer design (**done**)
+   - ADR-0006: Local-only processing, no server (**done**)
+   - ADR-0007: PDF.js legacy build and browser support (**done**)
+5. **Technical spikes** (**done**, see the
+   [spike report](spikes/phase0-spike-report.md)):
+   - Render 504- and 1,000-page PDFs with PDF.js and measure memory and speed.
+   - Add annotations, fill forms, and redact with pdf-lib, @cantoo/pdf-lib, and
+     PDFium-WASM; check the output with qpdf, PDF.js, and Poppler.
+   - Open a file through IPC in a locked-down Tauri app on Linux.
 6. **Initial threat model.** First draft of the STRIDE analysis (see §5) so security
    shapes the architecture from the start.
 7. **UX wireframes.** Low-fidelity layouts for the main screens: start screen, viewer,
@@ -177,9 +179,13 @@ desktop build artifact is produced for Windows and Linux.
 
 **Technical tasks:**
 - Run PDF.js in a **Web Worker** so parsing never blocks the UI
-- Configure PDF.js securely: `isEvalSupported: false`, PDF JavaScript disabled, current
-  version pinned (see §5)
-- Render cache with memory limits
+- Configure PDF.js securely (ADR-0007): legacy build, strict CSP with no `unsafe-eval`,
+  `enableXfa: false`, `maxImageSize` set, never load the PDF.js scripting sandbox,
+  exact version pinned (see §5)
+- Render cache with memory limits, and `OffscreenCanvas` rendering in the worker. The
+  spike measured +549 MB and 252 ms main-thread stalls on a 504-page file without these
+- Incremental search: show results while pages are scanned (extracting text from
+  1,000 pages took about 6 s in the spike)
 - Accessibility: keyboard-only operation, ARIA roles, screen-reader text layer
 
 **Unit tests:** renderer wrapper (open, page count, render calls, error handling for
@@ -228,7 +234,9 @@ correctly in at least 3 other viewers.
 - Merge multiple PDFs, split or extract pages
 - Insert images and new text blocks
 - **Redaction** that actually removes the underlying content (text, images, metadata),
-  not just a black box drawn on top. This is security-critical, see §5.
+  not just a black box drawn on top. This is security-critical, see §5. Select by exact
+  character boxes and show a preview before applying: in the spike, a padded rectangle
+  also removed letters from the neighbouring line.
 - Edit document metadata (title, author)
 - Compress / optimize on save
 - Export pages as images (PNG/JPEG)
@@ -247,14 +255,17 @@ automated extraction tests.
 1. Wrap `apps/web` in Tauri 2. Implement the `platform` desktop adapter: native open/save
    dialogs, file associations (`.pdf`), "Open with", drag onto the taskbar icon,
    native print, native menus and shortcuts.
-2. **Lock down Tauri:** minimal capability set, file-system scope limited to files the user
-   explicitly picks, strict CSP, no remote content loaded into the webview.
-3. Auto-updater with **signed updates**.
-4. **Code signing:** Windows (Authenticode) through the **SignPath Foundation** program,
+2. **Lock down Tauri** (ADR-0003): declare commands in `build.rs` so each needs an explicit
+   capability, no fs/shell/http plugins, file access only to files the user picks, strict
+   CSP, no remote content loaded into the webview.
+3. **Linux desktop entry:** use a custom template with `Exec=... %F`. Tauri's default
+   omits it, which breaks double-click opening (found in spike 3).
+4. Auto-updater with **signed updates**.
+5. **Code signing:** Windows (Authenticode) through the **SignPath Foundation** program,
    which is free for open-source projects. Linux packages signed with GPG (free). Without
    Windows signing, SmartScreen warns users on first install, so apply early (Phase 1).
    Flathub and winget are free distribution channels.
-5. Installers: Windows `.msi`/`.exe`; Linux `.AppImage`/`.deb`/`.rpm` and Flatpak.
+6. Installers: Windows `.msi`/`.exe`; Linux `.AppImage`/`.deb`/`.rpm` and Flatpak.
 
 **Tests:** `cargo test` for Rust commands, Playwright E2E against the desktop build,
 manual smoke tests on Windows 10/11 (x64 and ARM) and major Linux desktops (Ubuntu/GNOME,
@@ -319,7 +330,7 @@ crash-free sessions ≥ 99.5% in beta.
 |---|---|---|---|
 | **Unit** | Vitest | Pure functions, edit commands, document model, coordinate math, platform adapters (mocked) | ≥ 85% line coverage in `core`, ≥ 80% overall. Required on every PR |
 | **Component** | Vitest + Testing Library | React components (toolbar, dialogs, panels) and accessibility assertions (`jest-axe`) | Every interactive component |
-| **Integration** | Vitest (Node + real PDF.js/pdf-lib) | Open → edit → save → reopen round-trips against the corpus | Every edit feature |
+| **Integration** | Vitest (Node + real PDF.js/PDFium-WASM), checked with qpdf and Poppler as in spike 2 | Open → edit → save → reopen round-trips against the corpus | Every edit feature |
 | **E2E** | Playwright | Real user flows in Chromium, Firefox, and WebKit (needed for the Linux desktop app's WebKitGTK), and the Tauri build on Windows and Linux | Every user story's acceptance criteria |
 | **Visual regression** | Playwright screenshots | Rendered pages and UI compared to baselines | Corpus sample + key screens |
 | **Fuzz** | jazzer.js / custom mutator | Feed mutated PDFs to the parser and editor | Runs nightly, see §5 |
@@ -360,7 +371,7 @@ and **data leaks**.
 
 | Threat | Example | Mitigations |
 |---|---|---|
-| **Code execution via malicious PDF** | Exploit in a font, image codec, or JS engine (for example CVE-2024-4367 in PDF.js) | Keep PDF.js patched and pinned, `isEvalSupported: false`, **never execute PDF-embedded JavaScript**, parse in a Web Worker, strict CSP with no `unsafe-eval` and no `unsafe-inline` |
+| **Code execution via malicious PDF** | Exploit in a font, image codec, or JS engine (for example CVE-2024-4367 in PDF.js) | Keep PDF.js and PDFium patched and pinned, **never execute PDF-embedded JavaScript** (no PDF.js scripting sandbox), parse in a Web Worker, strict CSP with no `unsafe-eval` and no `unsafe-inline` |
 | **Desktop sandbox escape** | Webview compromise reaches the file system or shell through IPC | Tauri capability allowlist, no shell/exec commands, FS scope limited to files the user picked, validate all IPC input on the Rust side |
 | **Information disclosure** | PDF "phones home" through links, remote fonts/images, or form submit actions | Local-only processing, block automatic network requests from documents, confirm before opening external links, ignore `SubmitForm`/`Launch` actions |
 | **Failed redaction** | "Redacted" text is still extractable | Real content removal + automated extraction tests + metadata/hidden-layer scrub |
@@ -390,7 +401,7 @@ and **data leaks**.
   30 days, Low tracked in the backlog.
 - `SECURITY.md` explains how to report vulnerabilities privately (GitHub private
   advisories), with a 90-day disclosure timeline.
-- Monitor PDF.js, pdf-lib, and Tauri security advisories, and ship patches within
+- Monitor PDF.js, PDFium, and Tauri security advisories, and ship patches within
   7 days for Critical issues.
 
 ---
@@ -457,7 +468,8 @@ with a 1-page summary in `docs/research/`.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Editing existing text is much harder than expected | Scope slip | Kept out of 1.0 scope (confirmed). Prototype in a spike before starting it in v2 |
-| pdf-lib limits (maintenance pace, unsupported features) | Blocks editing features | PDFium-WASM as a fallback (ADR-0004); `core` hides the engine behind interfaces. Forking pdf-lib is allowed under MIT |
+| `@embedpdf/pdfium` is maintained by a small team (supply chain, bus factor) | Editing engine stalls or is compromised | Pin and hash-check it, build PDFium-WASM from upstream source in CI as a fallback, `core` hides the engine behind interfaces (ADR-0004) |
+| Two PDF parsers (PDF.js for viewing, PDFium for editing) | Twice the attack surface; the two may disagree on a file | Both run in workers under the same CSP; fuzz both; round-trip tests render with both. Revisit after Phase 2 |
 | PDF.js security vulnerabilities | User compromise | Pin and patch quickly, disable eval/JS, fuzzing, CSP |
 | Real-world PDFs break the app | Bad reviews | Large corpus, fuzzing, beta crash reports, graceful error UI |
 | Browser API gaps (for example File System Access API missing in Firefox/Safari) | Worse web UX | Fallback to download/upload in the `platform` adapter |
@@ -474,6 +486,7 @@ with a 1-page summary in `docs/research/`.
    (ADR-0001).
 3. ~~Decide on macOS~~ **Done:** no native macOS app for 1.0. Focus on Windows, Linux,
    and the browser. Apply to SignPath Foundation for free Windows code signing.
-4. Start Phase 0: personas, competitive review, requirements backlog.
-5. Run the three technical spikes.
-6. Scaffold the monorepo and CI (Phase 1).
+4. ~~Run the technical spikes and write the ADRs~~ **Done:** see the
+   [spike report](spikes/phase0-spike-report.md) and ADR-0002 to ADR-0007.
+5. Finish Phase 0: personas, competitive review, requirements backlog, wireframes.
+6. Scaffold the monorepo and CI (Phase 1), with Windows in the CI matrix from day one.

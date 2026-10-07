@@ -1,0 +1,3 @@
+web/vendor/
+src-tauri/target/
+src-tauri/gen/

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Minimal permissions: core defaults plus the two app commands. No fs, shell, http, or dialog plugins.",
+  "windows": ["main"],
+  "permissions": ["core:default", "allow-opened-file", "allow-report"]
+}

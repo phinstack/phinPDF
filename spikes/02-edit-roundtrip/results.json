@@ -1,0 +1,140 @@
+{
+  "baselinePopplerPx": {
+    "yellow": 0,
+    "red": 0,
+    "nameField": 0,
+    "checkbox": 0
+  },
+  "targets": {
+    "title": "Trace-based Just-in-Time Type Specialization for Dynamic",
+    "body": "small scripts as well as for complex applications. JavaScript, for"
+  },
+  "results": {
+    "pdf-lib@1.17.1": {
+      "annotate": {
+        "qpdf": "ok",
+        "pdfjs": {
+          "annots": [
+            "Highlight",
+            "Text",
+            "Ink"
+          ],
+          "values": {}
+        },
+        "popplerHighlightPx": 7464,
+        "popplerInkPx": 572
+      },
+      "fillForm": {
+        "qpdf": "ok",
+        "pdfjs": {
+          "name": "Ada Lovelace",
+          "agree": "Yes"
+        },
+        "popplerNameFieldInkPx": 369,
+        "popplerCheckmarkPx": 30
+      },
+      "encrypted": {
+        "error": "Input document to `PDFDocument.load` is encrypted. You can use `PDFDocument.load(..., { ignoreEncryption: true })` if you wish to load the document anyways."
+      },
+      "bigSave": {
+        "ms": 3062,
+        "inMB": 33.1,
+        "outMB": 33.1,
+        "qpdf": "ok"
+      }
+    },
+    "@cantoo/pdf-lib": {
+      "annotate": {
+        "qpdf": "ok",
+        "pdfjs": {
+          "annots": [
+            "Highlight",
+            "Text",
+            "Ink"
+          ],
+          "values": {}
+        },
+        "popplerHighlightPx": 7464,
+        "popplerInkPx": 572
+      },
+      "fillForm": {
+        "qpdf": "ok",
+        "pdfjs": {
+          "name": "Ada Lovelace",
+          "agree": "Yes"
+        },
+        "popplerNameFieldInkPx": 369,
+        "popplerCheckmarkPx": 30
+      },
+      "encrypted": {
+        "outputStillEncrypted": false,
+        "qpdf": "ok",
+        "pdfjs": {
+          "annots": [
+            "Highlight",
+            "Text",
+            "Ink"
+          ],
+          "values": {}
+        },
+        "popplerHighlightPx": 7464
+      },
+      "bigSave": {
+        "ms": 8322,
+        "inMB": 33.1,
+        "outMB": 33.2,
+        "qpdf": "ok"
+      }
+    },
+    "pdfium": {
+      "annotate": {
+        "qpdf": "ok",
+        "pdfjs": {
+          "annots": [
+            "Highlight",
+            "Text",
+            "Ink"
+          ],
+          "values": {}
+        },
+        "popplerHighlightPx": 7527,
+        "popplerInkPx": 182
+      },
+      "fillForm": {
+        "qpdf": "ok",
+        "pdfjs": {
+          "name": "Ada Lovelace",
+          "agree": "Yes"
+        },
+        "popplerNameFieldInkPx": 367,
+        "popplerCheckmarkPx": 30
+      },
+      "encrypted": {
+        "outputStillEncrypted": true,
+        "qpdf": "ok",
+        "pdfjs": {
+          "annots": [
+            "Highlight",
+            "Text",
+            "Ink"
+          ],
+          "values": {}
+        },
+        "popplerHighlightPx": 7527
+      },
+      "bigSave": {
+        "ms": 1790,
+        "inMB": 33.1,
+        "outMB": 34.5,
+        "qpdf": "ok"
+      },
+      "redact": {
+        "target": "small scripts as well as for complex applications. JavaScript, for",
+        "apiReportedRemoval": true,
+        "targetTextStillExtractable": false,
+        "titleStillPresent": true,
+        "qpdf": "ok"
+      }
+    }
+  }
+}

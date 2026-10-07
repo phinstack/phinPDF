@@ -1,0 +1,52 @@
+{
+  "tracemonkey.pdf": {
+    "pages": 14,
+    "openMs": 224,
+    "firstPageMs": 371,
+    "renderP50": 83.4,
+    "renderP95": 282.9,
+    "renderMax": 282.9,
+    "pagesPerSec": 10.2,
+    "longTasksOver50ms": 1,
+    "longestTaskMs": "111",
+    "textAllMs": 222,
+    "textChars": 81315,
+    "jsHeapMb": 5,
+    "peakChromeRssMb": 870,
+    "cspOrConsoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  "real-504p.pdf": {
+    "pages": 504,
+    "openMs": 564,
+    "firstPageMs": 731,
+    "renderP50": 59.7,
+    "renderP95": 191.4,
+    "renderMax": 452.5,
+    "pagesPerSec": 13.3,
+    "longTasksOver50ms": 25,
+    "longestTaskMs": "252",
+    "textAllMs": 6274,
+    "textChars": 2927340,
+    "jsHeapMb": 8,
+    "peakChromeRssMb": 1226,
+    "cspOrConsoleErrors": []
+  },
+  "synthetic-1000p.pdf": {
+    "pages": 1000,
+    "openMs": 440,
+    "firstPageMs": 515,
+    "renderP50": 42.4,
+    "renderP95": 58.7,
+    "renderMax": 92.1,
+    "pagesPerSec": 23.5,
+    "longTasksOver50ms": 1,
+    "longestTaskMs": "62",
+    "textAllMs": 6233,
+    "textChars": 5338893,
+    "jsHeapMb": 7,
+    "peakChromeRssMb": 925,
+    "cspOrConsoleErrors": []
+  }
+}
