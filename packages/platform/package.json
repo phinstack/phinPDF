@@ -1,0 +1,17 @@
+{
+  "name": "@phinpdf/platform",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Platform abstraction (ADR-0005): file open/save, links, printing for web and desktop.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.1"
+  }
+}

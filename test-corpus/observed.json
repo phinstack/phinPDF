@@ -1,0 +1,44 @@
+{
+  "malformed/truncated.pdf": {
+    "opens": "invalid"
+  },
+  "malformed/no-xref.pdf": {
+    "opens": true,
+    "pages": 3
+  },
+  "malformed/wrong-xref-offsets.pdf": {
+    "opens": true,
+    "pages": 3
+  },
+  "malformed/missing-eof.pdf": {
+    "opens": true,
+    "pages": 1
+  },
+  "malformed/junk-before-header.pdf": {
+    "opens": true,
+    "pages": 1
+  },
+  "malformed/header-only.pdf": {
+    "opens": "invalid"
+  },
+  "malformed/bad-stream-length.pdf": {
+    "opens": true,
+    "pages": 1
+  },
+  "malformed/missing-object.pdf": {
+    "opens": true,
+    "pages": 1
+  },
+  "malformed/cyclic-page-tree.pdf": {
+    "opens": true,
+    "pages": 2
+  },
+  "malicious/deep-nesting.pdf": {
+    "opens": true,
+    "pages": 1
+  },
+  "malicious/huge-page-count.pdf": {
+    "opens": true,
+    "pages": 1
+  }
+}

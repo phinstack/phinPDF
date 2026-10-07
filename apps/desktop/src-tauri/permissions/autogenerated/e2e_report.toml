@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-e2e-report"
+description = "Enables the e2e_report command without any pre-configured scope."
+commands.allow = ["e2e_report"]
+
+[[permission]]
+identifier = "deny-e2e-report"
+description = "Denies the e2e_report command without any pre-configured scope."
+commands.deny = ["e2e_report"]

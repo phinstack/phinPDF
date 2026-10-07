@@ -1,0 +1,14 @@
+{
+  "name": "@phinpdf/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Document model and edit commands with undo/redo. No DOM, no UI.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

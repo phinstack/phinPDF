@@ -1,0 +1,218 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit tests, licenses
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm test:coverage
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
+      - name: License policy (ADR-0001)
+        run: pnpm licenses:check
+      - name: Known vulnerabilities
+        run: pnpm audit --audit-level=moderate
+      - name: Build web app
+        run: pnpm build
+      - name: Upload web build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-dist
+          path: apps/web/dist/
+          retention-days: 14
+
+  e2e:
+    name: E2E (${{ matrix.browser }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # WebKit is required: the Linux desktop app runs on WebKitGTK (ADR-0003).
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Install ${{ matrix.browser }}
+        run: pnpm --filter @phinpdf/web exec playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm e2e --project=${{ matrix.browser }}
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: apps/web/playwright-report/
+          retention-days: 14
+
+  rust:
+    name: Rust fmt, clippy, tests, cargo-deny
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/desktop/src-tauri
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install system libraries
+        working-directory: .
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - name: Placeholder frontend
+        # tauri::generate_context! embeds the web build at compile time; these checks
+        # don't need the real one.
+        working-directory: .
+        run: mkdir -p apps/web/dist && echo '<!doctype html><title>placeholder</title>' > apps/web/dist/index.html
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets --features e2e -- -D warnings
+      - run: cargo test
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          manifest-path: apps/desktop/src-tauri/Cargo.toml
+          command: check advisories bans licenses sources
+
+  desktop:
+    name: Desktop (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-24.04
+            bundles: deb,rpm,appimage
+          - name: Windows
+            os: windows-2025
+            bundles: nsis,msi
+    env:
+      # AppImage tooling is itself an AppImage; CI runners have no FUSE.
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install system libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev xvfb file desktop-file-utils
+      - uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - uses: ./.github/actions/setup
+      - name: Build smoke-test app
+        run: pnpm --filter @phinpdf/desktop tauri build --debug --features e2e --config src-tauri/tauri.e2e.conf.json --no-bundle
+      - name: Smoke test (open file, render, lockdown checks)
+        run: node scripts/desktop-smoke.mjs
+      - name: Smoke test rejects a non-PDF
+        shell: bash
+        run: |
+          if node scripts/desktop-smoke.mjs test-corpus/files/malformed/not-a-pdf.pdf; then
+            echo "::error::the smoke test passed for a non-PDF file"
+            exit 1
+          fi
+      - name: Build installers (${{ matrix.bundles }})
+        run: pnpm --filter @phinpdf/desktop tauri build --bundles ${{ matrix.bundles }}
+      - name: Validate Linux desktop entry
+        if: runner.os == 'Linux'
+        # Double-click opening depends on Exec=... %F (found in Phase 0 spike 3).
+        run: |
+          dpkg-deb -x apps/desktop/src-tauri/target/release/bundle/deb/*.deb deb-contents
+          entry=$(ls deb-contents/usr/share/applications/*.desktop)
+          cat "$entry"
+          desktop-file-validate "$entry"
+          grep -qE '^Exec=.* %F$' "$entry"
+          grep -qE '^MimeType=application/pdf;$' "$entry"
+      - name: Upload installers
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: phinpdf-${{ runner.os }}
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+            apps/desktop/src-tauri/target/release/bundle/rpm/*.rpm
+            apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
+          retention-days: 14
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The gitleaks CLI is MIT-licensed; the gitleaks GitHub Action is not open source.
+      - name: Install gitleaks 8.30.1
+        run: |
+          curl -sSfL -o gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz" | sha256sum -c -
+          tar xzf gitleaks.tgz gitleaks
+      - name: Scan git history
+        run: ./gitleaks git --redact --verbose --no-banner .
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          # ADR-0001 allowlist (dev-only exceptions are handled by scripts/check-licenses.mjs).
+          allow-licenses: 0BSD, Apache-2.0, BSD-2-Clause, BSD-3-Clause, BlueOak-1.0.0, BSL-1.0, CC0-1.0, ISC, MIT, MIT-0, MPL-2.0, Unicode-3.0, Unicode-DFS-2016, Unlicense, Zlib, Python-2.0, CC-BY-4.0
+          comment-summary-in-pr: on-failure

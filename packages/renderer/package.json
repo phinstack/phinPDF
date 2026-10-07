@@ -1,0 +1,17 @@
+{
+  "name": "@phinpdf/renderer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PDF.js wrapper with secure defaults: open, render, errors.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "pdfjs-dist": "6.4.299"
+  }
+}

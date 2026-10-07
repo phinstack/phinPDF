@@ -1,0 +1,663 @@
+[
+  {
+    "file": "normal/text-1page.pdf",
+    "category": "normal",
+    "description": "One page of Helvetica text.",
+    "bytes": 7369,
+    "sha256": "d7b787591079ec1a7a87d4a30e193965e46396dbb184acc7852bc27e2b907efd",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/text-10pages.pdf",
+    "category": "normal",
+    "description": "Ten pages of text.",
+    "bytes": 70519,
+    "sha256": "fd87b5ea3520035d5136d2cda099993fb708f07743b385114cacd20b83da1aa3",
+    "expect": {
+      "opens": true,
+      "pages": 10
+    }
+  },
+  {
+    "file": "normal/standard-fonts.pdf",
+    "category": "normal",
+    "description": "All 14 standard Type 1 fonts (not embedded).",
+    "bytes": 9699,
+    "sha256": "1037c60363943556d40b0f233ebe66d2edbd6caf140fa949b7e8a20ab1362249",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/vector-graphics.pdf",
+    "category": "normal",
+    "description": "Filled and stroked paths, Bézier curves, dashes, and colours.",
+    "bytes": 768,
+    "sha256": "9d8c9d0d5dedf4f2c21d4bc31370eb123c213f90bbdb3299a298a44085da77c3",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/image-rgb.pdf",
+    "category": "normal",
+    "description": "A Flate-compressed 64x64 RGB image.",
+    "bytes": 15433,
+    "sha256": "07ecc384c5b9a4dd148802e1caad709b2d854af5dabf0055bfcdc9f538bf2b15",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/image-gray-smask.pdf",
+    "category": "normal",
+    "description": "Greyscale image with a soft mask (transparency).",
+    "bytes": 7942,
+    "sha256": "18bccf11340659a2cdaa6bb3b2ad275c70ad1645d2149a6a04452f235062e00e",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/outline.pdf",
+    "category": "normal",
+    "description": "Nested bookmarks (outline) pointing at pages.",
+    "bytes": 21890,
+    "sha256": "bbb719277ee5d6715585455fdcd84d89f2123b4150aa12c9253f41d8190ad177",
+    "expect": {
+      "opens": true,
+      "pages": 3
+    }
+  },
+  {
+    "file": "normal/links.pdf",
+    "category": "normal",
+    "description": "An internal link to page 2 and an external https link.",
+    "bytes": 14603,
+    "sha256": "dc45a1abc0d20a090898e42943f803d5ca3c875afb5959e7567695434a6ed4a5",
+    "expect": {
+      "opens": true,
+      "pages": 2
+    }
+  },
+  {
+    "file": "normal/annotations.pdf",
+    "category": "normal",
+    "description": "Existing sticky note, highlight with appearance, square, and ink annotations.",
+    "bytes": 7990,
+    "sha256": "6b222626c66fb6fcba522014ac0786784b6cd3a7cc6dc6008f4195efbded3d18",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/acroform.pdf",
+    "category": "normal",
+    "description": "AcroForm with text, checkbox, radio group, and combo box fields.",
+    "bytes": 8844,
+    "sha256": "8814475c021524a58229e1459b5b6197f9d0d2752a6583667a9dfa8be3d6b871",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/page-labels.pdf",
+    "category": "normal",
+    "description": "Page labels: i, ii, then 1, 2, 3.",
+    "bytes": 35486,
+    "sha256": "ed9118b03da0d61b3382ea9785efeb076d24a0510c43b43f9a597c59e0e6fede",
+    "expect": {
+      "opens": true,
+      "pages": 5
+    }
+  },
+  {
+    "file": "normal/metadata.pdf",
+    "category": "normal",
+    "description": "Info dictionary and XMP metadata.",
+    "bytes": 8024,
+    "sha256": "3a18bcf7beb09beab21e58a86ec8f035be949e7b56f29c029e18bb4815470a80",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/large-1000pages.pdf",
+    "category": "normal",
+    "description": "1,000 pages of short text (performance).",
+    "bytes": 656698,
+    "sha256": "f0fad93c7254d0f382b845372dcc6eb94f96d485e2a461c76aa857185459dfe1",
+    "expect": {
+      "opens": true,
+      "pages": 1000
+    }
+  },
+  {
+    "file": "normal/compressed-content.pdf",
+    "category": "normal",
+    "description": "Flate-compressed content streams.",
+    "bytes": 2293,
+    "sha256": "0c4404382a6257c9557bea409fae42c0414b5b5b9a853bac123a35d66964d0d4",
+    "expect": {
+      "opens": true,
+      "pages": 3
+    }
+  },
+  {
+    "file": "normal/multi-content-streams.pdf",
+    "category": "normal",
+    "description": "One page whose content is split across two streams.",
+    "bytes": 7596,
+    "sha256": "e92eab15ca972130348494027a97f086af20b5bcb4acf0daec4a149925038f37",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "normal/inherited-attributes.pdf",
+    "category": "normal",
+    "description": "MediaBox and Resources inherited from the Pages node.",
+    "bytes": 14320,
+    "sha256": "404d4f9875fd08185c99a6af8d8c468d0edd3c8617563ba0c0b15bc9e363fb31",
+    "expect": {
+      "opens": true,
+      "pages": 2
+    }
+  },
+  {
+    "file": "normal/tagged.pdf",
+    "category": "normal",
+    "description": "Tagged PDF markers (MarkInfo, Lang, minimal StructTreeRoot) for accessibility.",
+    "bytes": 7497,
+    "sha256": "b5e7fef4ba713b4abcbbe36b11adb74ce63aafbab41c54f328bd020795259ddb",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "versions/pdf-1.3.pdf",
+    "category": "versions",
+    "description": "Header declares PDF 1.3.",
+    "bytes": 7369,
+    "sha256": "91150d527da2b50b07bb08f4fe8a8d62268a46319cad998dcb5b7301859eb4c2",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "versions/pdf-1.4.pdf",
+    "category": "versions",
+    "description": "Header declares PDF 1.4.",
+    "bytes": 7369,
+    "sha256": "5e68835205bde625e406702a9418e37bc8c3d4a32f39b7e367bc8395d041ba89",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "versions/pdf-1.7.pdf",
+    "category": "versions",
+    "description": "Header declares PDF 1.7.",
+    "bytes": 7369,
+    "sha256": "d7b787591079ec1a7a87d4a30e193965e46396dbb184acc7852bc27e2b907efd",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "versions/pdf-2.0.pdf",
+    "category": "versions",
+    "description": "Header declares PDF 2.0.",
+    "bytes": 7369,
+    "sha256": "8f66bf43ff888578b703d3b4515fd2140dffdc805f6495213c9e250f8fdf5460",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "geometry/rotate-90.pdf",
+    "category": "geometry",
+    "description": "Page with /Rotate 90.",
+    "bytes": 7380,
+    "sha256": "065dfec64d3ec222b65a6b6c34cb2e9152611983b5175366f55d8413a5b7214e",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "geometry/rotate-180.pdf",
+    "category": "geometry",
+    "description": "Page with /Rotate 180.",
+    "bytes": 7381,
+    "sha256": "2f0a01c7f9ffef42aa158b96a90bbc6bce6d91b65f2bb0fadc9cdf5f312f0cd7",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "geometry/rotate-270.pdf",
+    "category": "geometry",
+    "description": "Page with /Rotate 270.",
+    "bytes": 7381,
+    "sha256": "1a584fe4b52e905ff1b67cf3771e31580cd937610ad2b60b2f86f15f8bf32517",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "geometry/mixed-sizes.pdf",
+    "category": "geometry",
+    "description": "Letter, A4, landscape, and legal pages in one file.",
+    "bytes": 28416,
+    "sha256": "e1befc00c5498f628d1b9e20c2f1a3da53c7e106e0a514b6d7fe1a2bdcf95b7b",
+    "expect": {
+      "opens": true,
+      "pages": 4
+    }
+  },
+  {
+    "file": "geometry/tiny-page.pdf",
+    "category": "geometry",
+    "description": "A 1x1 inch page.",
+    "bytes": 608,
+    "sha256": "791c24c1ae89f3988149b0b5a3364b48edf8c1dd174421146821ceba7168e9c2",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "geometry/huge-page.pdf",
+    "category": "geometry",
+    "description": "A 200x200 inch page (the PDF maximum).",
+    "bytes": 626,
+    "sha256": "2f2c7dca1a21221871b376db84a372d52b6963573135b21668ec25e0ebfc068b",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "geometry/cropbox.pdf",
+    "category": "geometry",
+    "description": "CropBox smaller than MediaBox, with a non-zero origin.",
+    "bytes": 7394,
+    "sha256": "1a518e9fcdf46cd32e2b8df531fd6c11a045237c6fdf8fcad2f4912e011e46f7",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "geometry/userunit.pdf",
+    "category": "geometry",
+    "description": "PDF 1.6 /UserUnit 2 (page units are 2/72 inch).",
+    "bytes": 7381,
+    "sha256": "4a9b201eca86965bcfadc5b4e6c0c559d4ca3649e1bd84440faea75f2a64b930",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "structure/object-streams.pdf",
+    "category": "structure",
+    "description": "Objects in object streams with a cross-reference stream (PDF 1.5+).",
+    "bytes": 5438,
+    "sha256": "9d331a40c8204a621dfe7d1af4cb5f4f7070e4a815a844717543afdcc5b74a93",
+    "expect": {
+      "opens": true,
+      "pages": 10
+    }
+  },
+  {
+    "file": "structure/linearized.pdf",
+    "category": "structure",
+    "description": "Linearized (\"fast web view\").",
+    "bytes": 7485,
+    "sha256": "99b80cff2bfec15bb7f131b79dede4027d1134c2a698e80004ed969cd8ab9fb8",
+    "expect": {
+      "opens": true,
+      "pages": 10
+    }
+  },
+  {
+    "file": "structure/incremental-update.pdf",
+    "category": "structure",
+    "description": "Original file plus an appended incremental update that replaces page 1.",
+    "bytes": 14765,
+    "sha256": "f880b5731f06bdd733e42b11c21e5b1d95175685a4ec2e4b790eeaa766c590ef",
+    "expect": {
+      "opens": true,
+      "pages": 2
+    }
+  },
+  {
+    "file": "encrypted/rc4-40.pdf",
+    "category": "encrypted",
+    "description": "RC4 40-bit, user password \"user\".",
+    "bytes": 1967,
+    "sha256": "828d7543d9030b5d8ddc3a7ec44793a019357ce11f89a17336e2082ea88c7117",
+    "expect": {
+      "opens": "password-required",
+      "password": "user",
+      "pages": 2
+    }
+  },
+  {
+    "file": "encrypted/rc4-128.pdf",
+    "category": "encrypted",
+    "description": "RC4 128-bit, user password \"user\".",
+    "bytes": 1968,
+    "sha256": "03bc09fd97a0b27a8fe13c46fe241c0b1fcee9fb3ed541afcd42318b50c0bc08",
+    "expect": {
+      "opens": "password-required",
+      "password": "user",
+      "pages": 2
+    }
+  },
+  {
+    "file": "encrypted/aes-128.pdf",
+    "category": "encrypted",
+    "description": "AES 128-bit, user password \"user\".",
+    "bytes": 2121,
+    "sha256": "346d75602b5e608fbe043e94b8254dfe87f559eb677d5a6d4eea25a03f1f46d0",
+    "expect": {
+      "opens": "password-required",
+      "password": "user",
+      "pages": 2
+    }
+  },
+  {
+    "file": "encrypted/aes-256.pdf",
+    "category": "encrypted",
+    "description": "AES 256-bit, user password \"user\".",
+    "bytes": 2435,
+    "sha256": "eb93909f5ca0476053cf76cc6dd6280eb633e8bdeda328a30d642fd3e2db76ff",
+    "expect": {
+      "opens": "password-required",
+      "password": "user",
+      "pages": 2
+    }
+  },
+  {
+    "file": "encrypted/aes-256-owner-only.pdf",
+    "category": "encrypted",
+    "description": "AES 256-bit, empty user password, printing and editing restricted.",
+    "bytes": 2438,
+    "sha256": "d71cc5f026403275c3fc0c502bbb4e8c5cdbfce381f6c113689ed96341eabae8",
+    "expect": {
+      "opens": true,
+      "pages": 2
+    }
+  },
+  {
+    "file": "encrypted/aes-256-unicode-password.pdf",
+    "category": "encrypted",
+    "description": "AES 256-bit, user password \"pässwörd\".",
+    "bytes": 2435,
+    "sha256": "f8ce72fff1ffa9ea0f7ebc438ba266fd151867f9342e4df1f266c5cf0d62a913",
+    "expect": {
+      "opens": "password-required",
+      "password": "pässwörd",
+      "pages": 2
+    }
+  },
+  {
+    "file": "malformed/truncated.pdf",
+    "category": "malformed",
+    "description": "First 60% of a valid file.",
+    "bytes": 12838,
+    "sha256": "ce4a2a9d3cde858de071c507c1f4a46cb537426e2a2839b396dffa9db7b635dd",
+    "expect": {
+      "opens": "invalid"
+    }
+  },
+  {
+    "file": "malformed/no-xref.pdf",
+    "category": "malformed",
+    "description": "No cross-reference table; startxref points at 0.",
+    "bytes": 21184,
+    "sha256": "67f475a098c58fc1f2ee5e84025375fee5cb495a763bf1a1143b81043fe4b75e",
+    "expect": {
+      "opens": true,
+      "pages": 3
+    }
+  },
+  {
+    "file": "malformed/wrong-xref-offsets.pdf",
+    "category": "malformed",
+    "description": "Every xref offset is off by 7 bytes.",
+    "bytes": 21398,
+    "sha256": "928455fa81232e1fec92324688361f362c2dde9b9665124b69e2fe3a3d3c00c5",
+    "expect": {
+      "opens": true,
+      "pages": 3
+    }
+  },
+  {
+    "file": "malformed/missing-eof.pdf",
+    "category": "malformed",
+    "description": "No %%EOF marker.",
+    "bytes": 7363,
+    "sha256": "b0ae382b2a4e85273385848492fb54e4c7e2830431094456e17562780b580704",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malformed/junk-before-header.pdf",
+    "category": "malformed",
+    "description": "500 bytes of junk before %PDF- (allowed by the spec within 1024 bytes).",
+    "bytes": 7869,
+    "sha256": "f2f5320a429cb881839ac84626da070b630729f8f1d29482c1dded6ecb0ffd2e",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malformed/not-a-pdf.pdf",
+    "category": "malformed",
+    "description": "A text file with a .pdf extension.",
+    "bytes": 24,
+    "sha256": "f4d443e8ff6d9cfd6a87cb86a3a03ce61c161732f958ad757bc5ce6a89f96276",
+    "expect": {
+      "opens": "not-pdf"
+    }
+  },
+  {
+    "file": "malformed/empty.pdf",
+    "category": "malformed",
+    "description": "Zero bytes.",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expect": {
+      "opens": "not-pdf"
+    }
+  },
+  {
+    "file": "malformed/header-only.pdf",
+    "category": "malformed",
+    "description": "Just a PDF header and nothing else.",
+    "bytes": 9,
+    "sha256": "0716f9264c9fe19f5d7455276107f3ddcc1d3497f63d60689a73558ae8a1bf5e",
+    "expect": {
+      "opens": "invalid"
+    }
+  },
+  {
+    "file": "malformed/bad-stream-length.pdf",
+    "category": "malformed",
+    "description": "Content stream declares /Length 9999 but is much shorter.",
+    "bytes": 7494,
+    "sha256": "513f6329edfdc3fc8b81f9bf69085d6b5498701318c6110e336687e45cb4da84",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malformed/missing-object.pdf",
+    "category": "malformed",
+    "description": "Page contents reference an object that does not exist.",
+    "bytes": 509,
+    "sha256": "b1ea5655b3db63bacf72b960fe865155779a807c563a50a28dfdec6042635f9e",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malformed/cyclic-page-tree.pdf",
+    "category": "malformed",
+    "description": "The page tree lists itself as a child (infinite loop risk).",
+    "bytes": 14383,
+    "sha256": "e261f36570b36acb04a6404709fe237d80ae5da248ce652829d9299977f309dd",
+    "expect": {
+      "opens": true,
+      "pages": 2
+    }
+  },
+  {
+    "file": "malicious/js-openaction.pdf",
+    "category": "malicious",
+    "description": "JavaScript OpenAction (must never run).",
+    "bytes": 7450,
+    "sha256": "5ab8ae53e75c336e7a70b088fe1a8924ba06e9591f594c1c7922ecc9f9323398",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/js-link.pdf",
+    "category": "malicious",
+    "description": "Link annotation with a JavaScript action.",
+    "bytes": 7481,
+    "sha256": "5e70dac4f7785382d98b03f8975c69cfb85818b1f3b5de14e0d38a845beb53ce",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/launch-action.pdf",
+    "category": "malicious",
+    "description": "OpenAction that tries to launch an executable.",
+    "bytes": 7449,
+    "sha256": "523c634165019a874c15611db763916dca677c0d284a95dcef76585687e647c5",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/submitform-action.pdf",
+    "category": "malicious",
+    "description": "Link that submits form data to a remote URL.",
+    "bytes": 7516,
+    "sha256": "1441462189a0e52e86144c7fa9a28dad6f9939a87d7cfcac541034efa5f66e60",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/uri-openaction.pdf",
+    "category": "malicious",
+    "description": "OpenAction that tries to open a URL automatically.",
+    "bytes": 7433,
+    "sha256": "94bb25625eb0fea16b3f5af4d6d68e0691c5c98db2ac066ca98c40aee874a130",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/embedded-executable.pdf",
+    "category": "malicious",
+    "description": "Embedded file attachment named invoice.exe.",
+    "bytes": 7696,
+    "sha256": "4821c57ae99a93806797c423cd5689dc56a5ee4be9f0a5c26e7e1061fd52e54a",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/image-bomb.pdf",
+    "category": "malicious",
+    "description": "Image declares 100,000 x 100,000 pixels (decompression bomb).",
+    "bytes": 7688,
+    "sha256": "7565c3f22ef240c8d45d8371e29e598e70396c44d9daa9dc46e9498db4a94c4b",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/flate-bomb.pdf",
+    "category": "malicious",
+    "description": "Content stream that inflates from about 64 KB to 64 MB.",
+    "bytes": 72664,
+    "sha256": "9984dbfac290dac2d531c43fe598d8731de02d8376cdc01834ee8650fb6b577e",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/deep-nesting.pdf",
+    "category": "malicious",
+    "description": "Array nested 5,000 levels deep (stack exhaustion risk).",
+    "bytes": 17377,
+    "sha256": "ab687702ffc36913f9042baf38ae65242f4d254410867a9607578c36c94dc8c5",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/huge-page-count.pdf",
+    "category": "malicious",
+    "description": "Page tree claims 1,000,000,000 pages but has one.",
+    "bytes": 7378,
+    "sha256": "0bd3f5b25b922ba38e73a471c9e0c9f5224aded4ae4b866a6e0a9c2627bbcaa0",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  },
+  {
+    "file": "malicious/xfa-form.pdf",
+    "category": "malicious",
+    "description": "XFA form (must not be rendered; XFA is disabled).",
+    "bytes": 7613,
+    "sha256": "45c5280c313068cd18ee672d5275c96e51ce544201f72bc33f9a7a2a0e163924",
+    "expect": {
+      "opens": true,
+      "pages": 1
+    }
+  }
+]

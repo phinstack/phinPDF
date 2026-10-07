@@ -3,8 +3,20 @@
 A free, open-source PDF viewer and editor that runs in a web browser and as a desktop app
 (Windows and Linux) from a single codebase. On macOS, use the web version.
 
-**Status:** planning. See [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) for the
-roadmap, tech stack, testing strategy, security assessment, and user-testing plan.
+**Status:** Phase 1 (foundation). The app opens a PDF and shows its first page in
+the browser and on the desktop. See [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) for
+the roadmap.
+
+## Quick start
+
+```sh
+corepack enable        # uses the pnpm version pinned in package.json
+pnpm install
+pnpm dev               # http://localhost:5173
+```
+
+Desktop app, tests, and repository layout: see [CONTRIBUTING.md](CONTRIBUTING.md).
+CI and repository settings: see [docs/ci.md](docs/ci.md).
 
 ## License
 

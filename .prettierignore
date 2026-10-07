@@ -1,0 +1,17 @@
+pnpm-lock.yaml
+dist/
+coverage/
+playwright-report/
+test-results/
+test-corpus/files/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+spikes/
+LICENSE
+NOTICE
+
+# Hand-written docs: keep compact tables.
+*.md
+
+# Freedesktop .desktop template: line structure is significant, not HTML.
+*.hbs

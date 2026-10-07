@@ -1,0 +1,4 @@
+{
+  "build": { "beforeBuildCommand": "pnpm --filter @phinpdf/web build:e2e" },
+  "app": { "security": { "capabilities": ["default", "e2e"] } }
+}

@@ -19,8 +19,10 @@ commercial license.
    - Matches PDF.js (Apache-2.0) and PDFium (Apache-2.0), our main dependencies. Tauri
      (MIT/Apache-2.0) is also compatible.
 2. **Dependencies must be permissively licensed.** Allowed: MIT, MIT-0, BSD-2-Clause,
-   BSD-3-Clause, Apache-2.0 (including `WITH LLVM-exception`), ISC, Zlib, 0BSD,
-   Unicode-DFS/Unicode-3.0, CC0-1.0, and MPL-2.0 (only if its files are used unmodified).
+   BSD-3-Clause, Apache-2.0 (including `WITH LLVM-exception`), ISC, Zlib, 0BSD, BSL-1.0,
+   BlueOak-1.0.0, Unlicense, Unicode-DFS/Unicode-3.0, CC0-1.0, and MPL-2.0 (only if its
+   files are used unmodified). The machine-readable list is `scripts/licenses.mjs` (npm)
+   and `apps/desktop/src-tauri/deny.toml` (Rust); keep them in sync.
    A dual-licensed package is fine when at least one of its options is allowed. Fonts: SIL OFL-1.1 or Apache-2.0.
    **Not allowed:** GPL, LGPL, AGPL, SSPL, BUSL, "non-commercial" licenses, and
    unlicensed code.

@@ -160,6 +160,32 @@ wireframes reviewed with at least 3 potential users.
 **Exit gate:** A "hello world" app builds and deploys to a preview URL from CI, and a
 desktop build artifact is produced for Windows and Linux.
 
+**Status (2026-10-07): built.** See [CONTRIBUTING.md](../CONTRIBUTING.md) and
+[docs/ci.md](ci.md). What was delivered, and what changed from the plan above:
+
+- The "hello world" goes further than planned: it opens a PDF and renders page 1 in the
+  browser and in the desktop app, through the real `platform` → `renderer` → `ui` stack.
+- **Node 24 LTS** is required (current tooling needs Node ≥ 22.22). **TypeScript 6.0** for
+  now, because typescript-eslint doesn't support TypeScript 7 yet.
+- License checks use `pnpm licenses` with our own SPDX evaluator (`scripts/licenses.mjs`)
+  instead of `license-checker`, plus `cargo deny` (which also replaces `cargo audit`) and
+  GitHub dependency review on PRs.
+- Secret scanning uses the MIT-licensed gitleaks CLI; the gitleaks GitHub Action is not
+  open source.
+- The test corpus has **60 generated PDFs** (Apache-2.0, no third-party files) with
+  expected outcomes, checked by 120+ renderer tests.
+- The desktop app is tested in CI on Linux and Windows by launching it with a PDF and
+  checking that it renders and that fs, shell, dialog, forged file tokens, network, and
+  `eval` are all blocked.
+- The CSP adds `'wasm-unsafe-eval'` (WebAssembly compilation only, needed by PDF.js
+  image decoders and later PDFium). JavaScript `eval` stays blocked.
+- **Found and fixed:** Prettier was corrupting the Linux `.desktop` template, which
+  breaks "Open with". CI now validates the packaged desktop entry.
+- **Still manual** (repository settings): `main` branch, branch protection, GitHub Pages,
+  security features, SignPath application. See [docs/ci.md](ci.md).
+- PR previews are CI artifacts, not hosted URLs. The web app deploys to GitHub Pages from
+  the default branch once Pages is enabled.
+
 ---
 
 ### Phase 2 — Viewer MVP (3–4 weeks)
