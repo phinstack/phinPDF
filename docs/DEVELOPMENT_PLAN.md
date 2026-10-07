@@ -136,7 +136,9 @@ was narrowed on 2026-10-07. Previously 5–7 months.
    shapes the architecture from the start.
 7. **UX wireframes.** Low-fidelity layouts for the 1.0 screens: start screen, viewer,
    search, annotation tools, sticky note, password prompt, print. **Layout decided:** a top
-   toolbar (like Acrobat Reader), with side panels for thumbnails/bookmarks and notes.
+   toolbar (like Acrobat Reader) with a left panel for thumbnails and bookmarks.
+   **Draft clickable wireframes:** https://claude.ai/artifact/RiBmPCbjx9rkhJonbbY6NN
+   (private to the project owner; review pending).
 8. **Test strategy and PDF corpus plan.** Decide which PDFs we will collect (see §4).
 
 **Exit gate:** Requirements signed off, ADRs merged, spikes show the stack works,

@@ -27,13 +27,13 @@ Reader" feedback in testing.
 
 | Area | What Reader users expect | phinPDF 1.0 |
 |---|---|---|
-| Layout | Top toolbar; side panel for thumbnails and bookmarks; comment pane on the right | Same structure: top toolbar, left panel (thumbnails/bookmarks), right panel (notes) |
+| Layout | Top toolbar; side panel for thumbnails and bookmarks; comment pane on the right | Top toolbar and left panel (thumbnails/bookmarks). Notes open in a pop-up; a right-hand notes list comes after 1.0 |
 | Page navigation | Page number box ("3 / 120"), previous/next, thumbnails, bookmarks | Same |
 | Zoom | Zoom in/out buttons, percentage box, fit page, fit width | Same |
 | Search | Ctrl+F opens a find bar; next/previous; match count; whole word and case options | Same, with matches shown while the search runs (long documents) |
 | Print | Ctrl+P; page ranges; fit or actual size | Same, via the system print dialog |
 | Highlight/underline | Select text, then pick the tool (or select first, then use a small pop-up menu) | Both ways: toolbar tool, and a pop-up after selecting text |
-| Sticky notes | Click to place an icon; note text in a pop-up or the comment pane | Same |
+| Sticky notes | Click to place an icon; note text in a pop-up or the comment pane | Same, pop-up only in 1.0 |
 | Saving | Annotations saved into the PDF; visible in other apps | Same, as standard PDF annotations |
 | Password-protected PDFs | Prompt for a password on open | Same |
 
