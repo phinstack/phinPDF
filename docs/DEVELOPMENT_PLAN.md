@@ -1,0 +1,455 @@
+# phinPDF Development Plan
+
+## 1. Goals
+
+Build a PDF viewer and editor that:
+
+- Runs in a **web browser** (no install, works offline as a PWA) and as a **desktop app**
+  (Windows, macOS, Linux) from **one shared codebase**.
+- Lets users **view** (render, zoom, search, navigate, print) and **edit** (annotate,
+  fill forms, sign, reorder/rotate/delete/merge pages, add text and images, redact) PDFs.
+- Processes documents **locally**. Files never leave the user's device unless the user
+  chooses to share them. This is both a privacy feature and a smaller security surface.
+- Treats every PDF as **untrusted input**.
+
+### Non-goals for v1
+
+- Full reflow editing of existing body text, like a word processor. This is very hard in
+  PDF and is deferred to a later phase (see Phase 6).
+- Cloud storage, accounts, real-time collaboration.
+- OCR of scanned documents (candidate for v2).
+- Mobile-native apps. The web build should still be usable on tablets.
+
+---
+
+## 2. Recommended Tech Stack
+
+The key decision is **web technologies + a thin desktop shell**. That gives one codebase
+for both targets.
+
+| Layer | Choice | Why |
+|---|---|---|
+| Language | **TypeScript** (strict mode) | Runs natively in browsers, strong typing, best PDF library ecosystem for the web |
+| UI framework | **React** + **Vite** | Mature, fast builds, large hiring/help pool |
+| Rendering | **PDF.js** (Mozilla, Apache-2.0) | Battle-tested (powers Firefox's viewer), text layer, search, forms, accessibility |
+| Editing / writing | **pdf-lib** (MIT) for page ops, forms, and annotation writing. Prototype **PDFium-WASM** or **MuPDF.js** for harder cases (see note) | pdf-lib is pure JS and easy to sandbox. The others give deeper editing at the cost of size or licensing |
+| State | **Zustand** + a command/undo stack | Simple, testable, makes undo/redo easy |
+| Desktop shell | **Tauri 2** (Rust) | ~10 MB installers vs ~150 MB for Electron, locked-down IPC, OS webview |
+| Web deployment | Static hosting + **PWA** (service worker) | Offline use, "install" from the browser, no backend needed |
+| Unit tests | **Vitest** + Testing Library | Fast, Vite-native |
+| E2E / visual tests | **Playwright** | Cross-browser, screenshot diffing, can drive the Tauri webview |
+| Desktop-side tests | `cargo test` | For the small Rust layer |
+| Repo layout | **pnpm workspaces** monorepo | Shared packages between web and desktop |
+
+> **Licensing note:** MuPDF.js is AGPL, so using it would require open-sourcing phinPDF
+> under AGPL or buying a commercial license. PDFium is BSD-licensed. Decide this in Phase 0
+> (ADR-003), because it affects the whole editing roadmap.
+
+### Proposed repository structure
+
+```
+phinPDF/
+├── apps/
+│   ├── web/              # React app, PWA build
+│   └── desktop/          # Tauri shell (src-tauri/ Rust + wraps the web build)
+├── packages/
+│   ├── core/             # Document model, edit commands, undo/redo. No UI, no DOM
+│   ├── renderer/         # PDF.js wrapper: page rendering, text layer, search
+│   ├── ui/               # Shared React components (toolbar, thumbnails, panels)
+│   └── platform/         # Platform abstraction: file open/save, print, clipboard
+│                         #   web impl (File System Access API) / desktop impl (Tauri IPC)
+├── test-corpus/          # Curated PDFs: normal, edge-case, malformed, malicious
+├── docs/
+│   ├── adr/              # Architecture Decision Records
+│   └── security/         # Threat model, assessment reports
+└── .github/workflows/    # CI
+```
+
+The **platform abstraction** is what makes "web or desktop" work. UI and core code call
+`platform.openFile()` / `platform.saveFile()` and never touch Tauri or browser APIs directly.
+
+---
+
+## 3. Phased Roadmap
+
+Estimates assume 1–2 developers. Each phase ends with an **exit gate** that must pass before
+the next phase starts. Unit tests, security checks, and user feedback run in **every** phase,
+not only in the dedicated phases.
+
+| Phase | Name | Est. duration |
+|---|---|---|
+| 0 | Planning & Discovery | 2 weeks |
+| 1 | Foundation & Infrastructure | 1–2 weeks |
+| 2 | Viewer MVP | 3–4 weeks |
+| 3 | Annotations & Forms | 3–4 weeks |
+| 4 | Page & Content Editing | 4–5 weeks |
+| 5 | Desktop App | 2–3 weeks |
+| 6 | Security Assessment & Hardening | 2–3 weeks (runs alongside 5) |
+| 7 | User Testing (Alpha → Beta) | 4–6 weeks |
+| 8 | Release 1.0 | 1–2 weeks |
+| 9 | Post-release / v2 | Ongoing |
+
+**Total to 1.0: roughly 5–7 months.**
+
+---
+
+### Phase 0 — Planning & Discovery (2 weeks)
+
+**Goal:** Know exactly what we're building, for whom, and how.
+
+1. **Define users and use cases.** Write 3–4 personas (for example: an office worker
+   signing contracts, a student annotating papers, an admin filling government forms,
+   a power user merging and splitting documents).
+2. **Competitive review.** Compare Adobe Acrobat Reader, Foxit, PDF-XChange, Okular,
+   Preview (macOS), Stirling-PDF, and the Firefox viewer. Note which features users
+   expect as table stakes.
+3. **Requirements.** Write a prioritized feature list using MoSCoW (Must / Should /
+   Could / Won't). Each feature gets user stories with acceptance criteria.
+4. **Architecture Decision Records (ADRs)** in `docs/adr/`:
+   - ADR-001: TypeScript + React + Vite
+   - ADR-002: Tauri vs Electron for desktop
+   - ADR-003: Editing engine and licensing (pdf-lib vs PDFium-WASM vs MuPDF)
+   - ADR-004: Platform abstraction layer design
+   - ADR-005: Local-only processing (no server)
+5. **Technical spikes** (throwaway prototypes, 1–2 days each):
+   - Render a 500-page PDF with PDF.js and measure memory and scroll speed.
+   - Use pdf-lib to add an annotation and save, then reopen in Acrobat and confirm it
+     looks right.
+   - Run a Tauri hello-world that opens a file through IPC.
+6. **Initial threat model.** First draft of the STRIDE analysis (see §5) so security
+   shapes the architecture from the start.
+7. **UX wireframes.** Low-fidelity layouts for the main screens: start screen, viewer,
+   annotation toolbar, page organizer, form fill, signature dialog.
+8. **Test strategy and PDF corpus plan.** Decide which PDFs we will collect (see §4).
+
+**Exit gate:** Requirements signed off, ADRs merged, spikes show the stack works,
+wireframes reviewed with at least 3 potential users.
+
+---
+
+### Phase 1 — Foundation & Infrastructure (1–2 weeks)
+
+1. Scaffold the pnpm monorepo with the structure above.
+2. Tooling: TypeScript strict, ESLint (including `eslint-plugin-security`), Prettier,
+   Husky pre-commit hooks, Conventional Commits.
+3. **CI pipeline (GitHub Actions)** on every PR:
+   - lint → typecheck → unit tests with coverage → build web → build desktop (3 OSes)
+   - **CodeQL** static analysis
+   - **Dependency scanning** (Dependabot + `pnpm audit`, `cargo audit`)
+   - **Secret scanning**
+   - **License check** to block GPL/AGPL dependencies unless ADR-003 allows them
+4. Branch protection: PRs required, CI must pass, at least 1 review.
+5. Set up the Vitest and Playwright harnesses with one passing example test each.
+6. Seed `test-corpus/` with roughly 50 PDFs.
+7. Implement `packages/platform` interfaces with stub web and desktop implementations.
+
+**Exit gate:** A "hello world" app builds and deploys to a preview URL from CI, and a
+desktop build artifact is produced for all 3 OSes.
+
+---
+
+### Phase 2 — Viewer MVP (3–4 weeks)
+
+**Features (Must):**
+- Open a PDF by file picker, drag and drop, or URL (web) / OS file association (desktop)
+- Render pages with virtualized scrolling (only visible pages rendered)
+- Zoom (fit width, fit page, custom %), rotate view
+- Page thumbnails sidebar, outline/bookmarks panel
+- Text selection and copy (PDF.js text layer)
+- Full-text search with highlight and next/previous
+- Go to page, keyboard navigation
+- Print
+- Password-protected PDF support (prompt for password)
+- Dark mode
+- Recent files list
+
+**Technical tasks:**
+- Run PDF.js in a **Web Worker** so parsing never blocks the UI
+- Configure PDF.js securely: `isEvalSupported: false`, PDF JavaScript disabled, current
+  version pinned (see §5)
+- Render cache with memory limits
+- Accessibility: keyboard-only operation, ARIA roles, screen-reader text layer
+
+**Unit tests:** renderer wrapper (open, page count, render calls, error handling for
+corrupt files), search logic, zoom math, navigation state, password flow.
+**E2E tests:** open → scroll → search → zoom → print-preview across Chromium, Firefox, WebKit.
+**Performance budgets:** first page visible in under 1 s for a 10 MB PDF; smooth scrolling
+on a 1,000-page document; memory under 500 MB.
+
+**Exit gate:** All corpus PDFs open without crashes (malformed ones show a friendly error),
+coverage ≥ 80% in `core` and `renderer`, performance budgets met.
+
+---
+
+### Phase 3 — Annotations & Forms (3–4 weeks)
+
+**Features:**
+- Highlight, underline, strikethrough (text-anchored)
+- Freehand ink drawing, shapes (rectangle, ellipse, line, arrow)
+- Sticky-note comments and a comment panel
+- Free-text boxes
+- **Fill AcroForm fields** (text, checkbox, radio, dropdown), flatten on save as an option
+- **Signatures:** draw, type, or upload an image, then place it on the page.
+  (Cryptographic digital signatures come in v2.)
+- Undo/redo for every action (command pattern in `core`)
+- **Save** as standard PDF annotations so Acrobat, Preview, and others can read them.
+  Use incremental save where possible.
+
+**Unit tests:** every edit command (apply / undo / redo / serialize), coordinate
+transforms (screen ↔ PDF user space, including rotated pages), form-field value
+round-trips, save → reopen round-trip tests that assert annotations survive.
+**Interoperability tests:** save in phinPDF, then check the file in Acrobat Reader,
+macOS Preview, Chrome, and Firefox (manual checklist plus automated reopen in PDF.js).
+
+**Exit gate:** Annotated and form-filled files round-trip without loss and render
+correctly in at least 3 other viewers.
+
+---
+
+### Phase 4 — Page & Content Editing (4–5 weeks)
+
+**Features:**
+- Page organizer: reorder (drag and drop), rotate, delete, duplicate, insert blank page
+- Merge multiple PDFs, split or extract pages
+- Insert images and new text blocks
+- **Redaction** that actually removes the underlying content (text, images, metadata),
+  not just a black box drawn on top. This is security-critical, see §5.
+- Edit document metadata (title, author)
+- Compress / optimize on save
+- Export pages as images (PNG/JPEG)
+- *(Stretch)* Simple edits of existing single-line text where the font is embedded
+
+**Unit tests:** page-operation commands, merge/split correctness (page counts, content
+preserved, bookmarks fixed up), redaction tests that **verify removed text cannot be
+extracted** after save, metadata scrubbing.
+
+**Exit gate:** Feature-complete for 1.0 scope, all tests green, redaction verified by
+automated extraction tests.
+
+---
+
+### Phase 5 — Desktop App (2–3 weeks)
+
+1. Wrap `apps/web` in Tauri 2. Implement the `platform` desktop adapter: native open/save
+   dialogs, file associations (`.pdf`), "Open with", drag onto the dock/taskbar icon,
+   native print, native menus and shortcuts.
+2. **Lock down Tauri:** minimal capability set, file-system scope limited to files the user
+   explicitly picks, strict CSP, no remote content loaded into the webview.
+3. Auto-updater with **signed updates**.
+4. **Code signing:** Windows (Authenticode), macOS (Developer ID + notarization), Linux
+   (signed AppImage/deb/rpm, optionally Flatpak).
+5. Installers: `.msi`/`.exe`, `.dmg`, `.AppImage`/`.deb`/`.rpm`.
+
+**Tests:** `cargo test` for Rust commands, Playwright E2E against the desktop build,
+manual smoke tests on each OS (including Windows on ARM and Apple Silicon).
+
+**Exit gate:** Signed installers for all 3 OSes install, open files by double-click,
+and auto-update from a test release.
+
+---
+
+### Phase 6 — Security Assessment & Hardening (2–3 weeks, alongside Phase 5)
+
+See §5 for the full program. In short: finalize the threat model, run fuzzing, SAST/DAST,
+dependency and license audit, a focused manual review of the riskiest areas, an external
+penetration test if budget allows, and fix every Critical/High finding before beta.
+
+**Exit gate:** No open Critical or High findings. Medium findings are triaged with owners
+and dates. Security report published in `docs/security/`.
+
+---
+
+### Phase 7 — User Testing (4–6 weeks)
+
+See §6 for the full program. Rounds: moderated usability tests → closed alpha →
+public beta → accessibility audit.
+
+**Exit gate:** SUS score ≥ 75, task success ≥ 90% on core tasks, no open P0/P1 bugs,
+crash-free sessions ≥ 99.5% in beta.
+
+---
+
+### Phase 8 — Release 1.0 (1–2 weeks)
+
+- Release candidate build, full regression run (unit + E2E + manual checklist)
+- Docs: user guide, keyboard shortcut reference, FAQ, privacy policy, security policy
+  (`SECURITY.md` with a vulnerability disclosure process)
+- Publish: web (production URL), desktop (GitHub Releases + website; optionally Microsoft
+  Store, Mac App Store, Flathub)
+- Changelog, release notes, launch announcement
+- On-call / triage rota for launch week
+
+---
+
+### Phase 9 — Post-release / v2 candidates
+
+- Cryptographic digital signatures (PAdES) and signature validation
+- OCR for scanned PDFs (Tesseract-WASM)
+- True editing of existing body text (reflow)
+- PDF/A export and validation
+- Compare two PDFs (visual diff)
+- Plugin / scripting API
+- Optional cloud sync / sharing
+
+---
+
+## 4. Unit Test & Quality Strategy
+
+### Test pyramid
+
+| Level | Tool | Scope | Target |
+|---|---|---|---|
+| **Unit** | Vitest | Pure functions, edit commands, document model, coordinate math, platform adapters (mocked) | ≥ 85% line coverage in `core`, ≥ 80% overall. Required on every PR |
+| **Component** | Vitest + Testing Library | React components (toolbar, dialogs, panels) and accessibility assertions (`jest-axe`) | Every interactive component |
+| **Integration** | Vitest (Node + real PDF.js/pdf-lib) | Open → edit → save → reopen round-trips against the corpus | Every edit feature |
+| **E2E** | Playwright | Real user flows in Chromium, Firefox, WebKit, and the Tauri build | Every user story's acceptance criteria |
+| **Visual regression** | Playwright screenshots | Rendered pages and UI compared to baselines | Corpus sample + key screens |
+| **Fuzz** | jazzer.js / custom mutator | Feed mutated PDFs to the parser and editor | Runs nightly, see §5 |
+| **Performance** | Playwright + custom benchmarks | Load time, scroll FPS, memory | Budgets enforced in CI |
+
+### Practices
+
+- **Write tests with the feature.** A PR without tests for new logic does not merge.
+- **Every bug fix includes a regression test**, and the PDF that triggered it goes into
+  the corpus.
+- **Round-trip tests are the core safety net:** for every edit command,
+  `open(save(apply(doc)))` must equal the expected state.
+- **Mutation testing** (Stryker) on `core` each month, to make sure tests actually catch bugs.
+- **Flaky-test policy:** fix the flaky test or its root cause right away. Never skip it.
+
+### Test PDF corpus (`test-corpus/`)
+
+- **Normal:** text-heavy, image-heavy, scanned, forms (AcroForm), large (1,000+ pages),
+  multilingual/RTL/CJK, various PDF versions (1.3–2.0)
+- **Edge cases:** rotated pages, odd page sizes, encrypted (RC4, AES-128, AES-256),
+  linearized, incremental updates, broken xref tables
+- **Malicious/malformed:** PDFs with embedded JavaScript, launch actions, embedded files,
+  oversized images (decompression bombs), deeply nested objects, known CVE reproducers
+  (for example the PDF.js font CVE-2024-4367)
+- Sources: PDF.js test suite, Mozilla pdf.js-corpus, the qpdf test suite, plus our own.
+  Check licenses before committing third-party files.
+
+---
+
+## 5. Security Assessment Plan
+
+PDF is one of the most-attacked file formats. Our main threats are **malicious PDFs**
+and **data leaks**.
+
+### 5.1 Threat model (STRIDE). Start in Phase 0 and update every phase.
+
+| Threat | Example | Mitigations |
+|---|---|---|
+| **Code execution via malicious PDF** | Exploit in a font, image codec, or JS engine (for example CVE-2024-4367 in PDF.js) | Keep PDF.js patched and pinned, `isEvalSupported: false`, **never execute PDF-embedded JavaScript**, parse in a Web Worker, strict CSP with no `unsafe-eval` and no `unsafe-inline` |
+| **Desktop sandbox escape** | Webview compromise reaches the file system or shell through IPC | Tauri capability allowlist, no shell/exec commands, FS scope limited to files the user picked, validate all IPC input on the Rust side |
+| **Information disclosure** | PDF "phones home" through links, remote fonts/images, or form submit actions | Local-only processing, block automatic network requests from documents, confirm before opening external links, ignore `SubmitForm`/`Launch` actions |
+| **Failed redaction** | "Redacted" text is still extractable | Real content removal + automated extraction tests + metadata/hidden-layer scrub |
+| **Denial of service** | Decompression bombs, recursive objects, huge pages | Resource limits (memory, page size, recursion depth), timeouts, worker that can be killed and restarted |
+| **Tampering / supply chain** | Compromised npm/crates dependency or update server | Lockfiles, dependency review, `pnpm audit`/`cargo audit`, SBOM (CycloneDX), signed releases, signed auto-updates, pinned GitHub Actions |
+| **Spoofing** | Fake update, unsigned installer | Code signing on all platforms, update signature verification |
+| **Web-specific** | XSS through document text, filenames, or metadata | React auto-escaping, no `dangerouslySetInnerHTML`, Trusted Types, strict CSP, security headers (HSTS, COOP/COEP, X-Content-Type-Options) |
+
+### 5.2 Assessment activities
+
+| Activity | When | Tooling |
+|---|---|---|
+| Static analysis (SAST) | Every PR | CodeQL, Semgrep, `eslint-plugin-security`, `cargo clippy` |
+| Dependency and license scanning | Every PR + daily | Dependabot, `pnpm audit`, `cargo audit`, `cargo deny`, license checker |
+| Secret scanning | Every push | GitHub secret scanning / gitleaks |
+| **Fuzzing** | Nightly from Phase 2 | Mutated corpus fed to open/render/edit/save paths; crashes and hangs filed as bugs automatically |
+| Dynamic scanning (DAST) | Phase 6, before each release | OWASP ZAP against the web deployment (headers, CSP, misconfig) |
+| Malicious-PDF test suite | Every PR (in E2E) | Corpus of malicious PDFs must open safely, or be rejected, with no network calls and no script execution |
+| Manual secure code review | Phase 6 | Focus on IPC handlers, file handling, redaction, save/serialize, CSP |
+| Tauri config review | Phase 5/6 | Capabilities, CSP, updater keys, FS scopes |
+| **External penetration test** | Phase 6 (if budget allows) | Third-party firm or bug-bounty style review of desktop + web |
+| SBOM generation | Every release | CycloneDX |
+
+### 5.3 Policies
+
+- Severity uses CVSS. **Critical/High block release.** Medium must be fixed within
+  30 days, Low tracked in the backlog.
+- `SECURITY.md` explains how to report vulnerabilities privately (GitHub private
+  advisories), with a 90-day disclosure timeline.
+- Monitor PDF.js, pdf-lib, and Tauri security advisories, and ship patches within
+  7 days for Critical issues.
+
+---
+
+## 6. User Testing Plan
+
+### 6.1 Rounds
+
+| Round | When | Who | Method | Goal |
+|---|---|---|---|---|
+| **Concept / wireframe test** | Phase 0 | 3–5 target users | Clickable Figma prototype, think-aloud | Validate layout and feature priorities before coding |
+| **Usability round 1** | End of Phase 2 | 5–6 users | Moderated remote sessions (45 min), task-based | Viewer usability |
+| **Usability round 2** | End of Phase 4 | 5–6 *new* users | Moderated, task-based | Annotation, forms, page-editing usability |
+| **Closed alpha** | Phase 7, weeks 1–2 | 15–30 invited users | Real-world use, in-app feedback button, weekly survey | Find bugs and workflow gaps |
+| **Accessibility audit** | Phase 7 | Users of screen readers (NVDA, VoiceOver, JAWS) and keyboard-only users + automated axe scans | Task-based + WCAG 2.2 AA checklist | Accessibility compliance |
+| **Public beta** | Phase 7, weeks 3–6 | Open sign-up | Opt-in, privacy-respecting crash reporting and anonymous usage metrics; feedback forum | Scale testing, stability, compatibility with real-world PDFs |
+
+### 6.2 Core test tasks (examples)
+
+1. Open a PDF and find the paragraph that mentions "invoice total".
+2. Highlight two sentences and add a comment to one.
+3. Fill in and sign a 2-page form, then save it.
+4. Combine three PDFs into one and delete page 4.
+5. Redact a phone number, save, and email the file. (Then we verify the number is truly gone.)
+6. Rotate a scanned page and export page 1 as an image.
+
+### 6.3 Metrics and success criteria
+
+- **Task success rate** ≥ 90% on core tasks
+- **Time on task** compared to a baseline (for example Acrobat Reader / Preview)
+- **System Usability Scale (SUS)** ≥ 75 (above-average usability)
+- **Error rate** and number of times users ask for help
+- **Crash-free sessions** ≥ 99.5% in beta
+- **Net Promoter Score** collected in beta (informational)
+
+### 6.4 Feedback loop
+
+Findings from each round are logged as GitHub issues labelled `ux-research` with a severity
+(P0 blocker → P3 cosmetic). P0/P1 issues are fixed before the next round. Each round ends
+with a 1-page summary in `docs/research/`.
+
+---
+
+## 7. Process & Workflow
+
+- **Methodology:** 2-week sprints, backlog in GitHub Projects, a demo at the end of each sprint.
+- **Branching:** trunk-based. Short-lived feature branches, PRs into `main`.
+- **Definition of Done** (every feature):
+  - [ ] Acceptance criteria met
+  - [ ] Unit + integration tests written, coverage thresholds met
+  - [ ] E2E test for the user flow
+  - [ ] Works in web (Chromium, Firefox, Safari) **and** desktop
+  - [ ] Keyboard-accessible, passes axe checks
+  - [ ] No new CodeQL/Semgrep/audit findings
+  - [ ] Docs/changelog updated
+  - [ ] Code reviewed and approved
+- **Environments:** PR preview deployments (web), nightly desktop builds, staging, production.
+
+---
+
+## 8. Key Risks
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Editing existing text is much harder than expected | Scope slip | Kept out of 1.0 scope. Prototype early in a spike |
+| pdf-lib limits (maintenance pace, unsupported features) | Blocks editing features | ADR-003 evaluates PDFium-WASM/MuPDF as a fallback; `core` hides the engine behind interfaces |
+| PDF.js security vulnerabilities | User compromise | Pin and patch quickly, disable eval/JS, fuzzing, CSP |
+| Real-world PDFs break the app | Bad reviews | Large corpus, fuzzing, beta crash reports, graceful error UI |
+| Browser API gaps (for example File System Access API missing in Firefox/Safari) | Worse web UX | Fallback to download/upload in the `platform` adapter |
+| Code-signing cost and setup time | Release delay | Start Apple/Windows certificate procurement in Phase 1 |
+| Licensing conflict (AGPL dependencies) | Legal | License check in CI, ADR-003 decision |
+
+---
+
+## 9. Immediate Next Steps
+
+1. Review this plan and confirm the tech stack and 1.0 scope.
+2. Decide **ADR-003 (editing engine and licensing)** and the project's own license
+   (for example MIT, Apache-2.0, or proprietary).
+3. Start Phase 0: personas, competitive review, requirements backlog.
+4. Run the three technical spikes.
+5. Scaffold the monorepo and CI (Phase 1).
