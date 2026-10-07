@@ -105,9 +105,9 @@ not only in the dedicated phases.
 
 **Goal:** Know exactly what we're building, for whom, and how.
 
-1. **Define users and use cases.** Write 3–4 personas (for example: an office worker
-   signing contracts, a student annotating papers, an admin filling government forms,
-   a power user merging and splitting documents).
+1. **Define users and use cases.** **Done (draft):** target users are **office workers**
+   and **students**. See [user profiles](user-profiles.md), including draft feature
+   priorities and user-research test tasks.
 2. **Competitive review.** Compare Adobe Acrobat Reader, Foxit, PDF-XChange, Okular,
    Preview (macOS), Stirling-PDF, and the Firefox viewer. Note which features users
    expect as table stakes.
