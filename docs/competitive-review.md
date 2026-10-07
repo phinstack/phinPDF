@@ -5,9 +5,17 @@
   profiles (office workers and students) most likely use it today.
 - **Scope:** only the features in phinPDF 1.0: view, zoom, search, print, highlight,
   underline, sticky notes.
+- **Status:** reviewed and approved by the project owner, 2026-10-07.
 - **Caveat:** written from general knowledge of Reader. Acrobat's interface changes often,
   so check details against the current version during the Phase 0 wireframe review
   (`docs/research/`).
+
+## Goal
+
+phinPDF doesn't need to beat Acrobat Reader. The aim is to cover the everyday tasks of the
+two target profiles well in 1.0, then close the gap over later releases (Fill & Sign
+first). The "match these" table below is a direction, not a 1.0 checklist beyond the 1.0
+features.
 
 ## Why people would switch
 

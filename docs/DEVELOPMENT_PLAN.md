@@ -90,7 +90,7 @@ not only in the dedicated phases.
 
 | Phase | Name | Est. duration |
 |---|---|---|
-| 0 | Planning & Discovery | 2 weeks (technical part done) |
+| 0 | Planning & Discovery | 2 weeks (done) |
 | 1 | Foundation & Infrastructure | 1–2 weeks (done) |
 | 2 | Viewer MVP | 3–4 weeks |
 | 3 | Annotations: highlight, underline, sticky notes | 2–3 weeks |
@@ -138,11 +138,14 @@ was narrowed on 2026-10-07. Previously 5–7 months.
    search, annotation tools, sticky note, password prompt, print. **Layout decided:** a top
    toolbar (like Acrobat Reader) with a left panel for thumbnails and bookmarks.
    **Draft clickable wireframes:** https://claude.ai/artifact/RiBmPCbjx9rkhJonbbY6NN
-   (private to the project owner; review pending).
+   (private to the project owner). **Approved 2026-10-07.**
 8. **Test strategy and PDF corpus plan.** Decide which PDFs we will collect (see §4).
 
 **Exit gate:** Requirements signed off, ADRs merged, spikes show the stack works,
 wireframes reviewed by the project owner (the only tester for now; see §6).
+
+**Status (2026-10-07): Phase 0 complete.** Scope, user profiles, competitive review, ADRs,
+spikes, and wireframes are all signed off.
 
 ---
 
