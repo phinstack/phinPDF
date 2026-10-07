@@ -113,9 +113,9 @@ was narrowed on 2026-10-07. Previously 5–7 months.
 1. **Define users and use cases.** **Done (draft):** target users are **office workers**
    and **students**. See [user profiles](user-profiles.md), including draft feature
    priorities and user-research test tasks.
-2. **Competitive review.** Compare Adobe Acrobat Reader, Foxit, PDF-XChange, Okular,
-   Preview (macOS), Stirling-PDF, and the Firefox viewer. Note which features users
-   expect as table stakes.
+2. **Competitive review.** **Done:** primary competitor is **Adobe Acrobat Reader**. See
+   the [competitive review](competitive-review.md) (expectations to match, shortcuts,
+   where phinPDF can do better).
 3. **Requirements.** Write a prioritized feature list using MoSCoW (Must / Should /
    Could / Won't). Each feature gets user stories with acceptance criteria.
 4. **Architecture Decision Records (ADRs)** in `docs/adr/`:
@@ -134,12 +134,13 @@ was narrowed on 2026-10-07. Previously 5–7 months.
    - Open a file through IPC in a locked-down Tauri app on Linux.
 6. **Initial threat model.** First draft of the STRIDE analysis (see §5) so security
    shapes the architecture from the start.
-7. **UX wireframes.** Low-fidelity layouts for the main screens: start screen, viewer,
-   annotation toolbar, page organizer, form fill, signature dialog.
+7. **UX wireframes.** Low-fidelity layouts for the 1.0 screens: start screen, viewer,
+   search, annotation tools, sticky note, password prompt, print. **Layout decided:** a top
+   toolbar (like Acrobat Reader), with side panels for thumbnails/bookmarks and notes.
 8. **Test strategy and PDF corpus plan.** Decide which PDFs we will collect (see §4).
 
 **Exit gate:** Requirements signed off, ADRs merged, spikes show the stack works,
-wireframes reviewed with at least 3 potential users.
+wireframes reviewed by the project owner (the only tester for now; see §6).
 
 ---
 
@@ -443,6 +444,20 @@ and **data leaks**.
 ## 6. User Testing Plan
 
 ### 6.1 Rounds
+
+**Current tester: the project owner only** (decided 2026-10-07). Until more testers are
+recruited, each round below is run as a **structured self-test**: work through the task
+list in §6.2 and the profile tasks in [user profiles](user-profiles.md), time each task,
+and log every problem as a GitHub issue labelled `ux-research` with a severity. Because
+one person who knows the app can't stand in for new users, two things make up for it:
+
+- **Automated checks** in CI: axe accessibility scans in the E2E tests, keyboard-only E2E
+  flows, and the performance budgets.
+- **Recruit 3–5 outside testers before the public beta** (Phase 7), for example classmates
+  or colleagues matching the two profiles. The public beta itself is the main source of
+  outside feedback.
+
+The table shows the full plan for when testers are available.
 
 | Round | When | Who | Method | Goal |
 |---|---|---|---|---|
