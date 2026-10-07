@@ -11,11 +11,13 @@ Build a PDF viewer and editor that:
 - Processes documents **locally**. Files never leave the user's device unless the user
   chooses to share them. This is both a privacy feature and a smaller security surface.
 - Treats every PDF as **untrusted input**.
+- Is **fully open source** under Apache-2.0: free to use, modify, and redistribute,
+  including commercially.
 
 ### Non-goals for v1
 
 - Full reflow editing of existing body text, like a word processor. This is very hard in
-  PDF and is deferred to a later phase (see Phase 6).
+  PDF and is deferred to a later phase (see Phase 9).
 - Cloud storage, accounts, real-time collaboration.
 - OCR of scanned documents (candidate for v2).
 - Mobile-native apps. The web build should still be usable on tablets.
@@ -32,7 +34,7 @@ for both targets.
 | Language | **TypeScript** (strict mode) | Runs natively in browsers, strong typing, best PDF library ecosystem for the web |
 | UI framework | **React** + **Vite** | Mature, fast builds, large hiring/help pool |
 | Rendering | **PDF.js** (Mozilla, Apache-2.0) | Battle-tested (powers Firefox's viewer), text layer, search, forms, accessibility |
-| Editing / writing | **pdf-lib** (MIT) for page ops, forms, and annotation writing. Prototype **PDFium-WASM** or **MuPDF.js** for harder cases (see note) | pdf-lib is pure JS and easy to sandbox. The others give deeper editing at the cost of size or licensing |
+| Editing / writing | **pdf-lib** (MIT) for page ops, forms, and annotation writing. **PDFium-WASM** (BSD-3/Apache-2.0) as the fallback for harder cases | pdf-lib is pure JS and easy to sandbox. PDFium gives deeper editing and is also permissively licensed |
 | State | **Zustand** + a command/undo stack | Simple, testable, makes undo/redo easy |
 | Desktop shell | **Tauri 2** (Rust) | ~10 MB installers vs ~150 MB for Electron, locked-down IPC, OS webview |
 | Web deployment | Static hosting + **PWA** (service worker) | Offline use, "install" from the browser, no backend needed |
@@ -41,9 +43,12 @@ for both targets.
 | Desktop-side tests | `cargo test` | For the small Rust layer |
 | Repo layout | **pnpm workspaces** monorepo | Shared packages between web and desktop |
 
-> **Licensing note:** MuPDF.js is AGPL, so using it would require open-sourcing phinPDF
-> under AGPL or buying a commercial license. PDFium is BSD-licensed. Decide this in Phase 0
-> (ADR-003), because it affects the whole editing roadmap.
+> **Licensing (decided):** phinPDF is licensed under **Apache-2.0**, so anyone can use,
+> modify, and redistribute it for free, including commercially. To keep that true, every
+> dependency must be under a **permissive license** (MIT, BSD, Apache-2.0, ISC, Zlib, MPL-2.0
+> for unmodified files, or similar). **Copyleft libraries (GPL, LGPL, AGPL) are not allowed.**
+> That rules out MuPDF (AGPL), Ghostscript (AGPL), and Poppler (GPL). See
+> [ADR-0001](adr/0001-license-and-dependency-policy.md).
 
 ### Proposed repository structure
 
@@ -106,11 +111,12 @@ not only in the dedicated phases.
 3. **Requirements.** Write a prioritized feature list using MoSCoW (Must / Should /
    Could / Won't). Each feature gets user stories with acceptance criteria.
 4. **Architecture Decision Records (ADRs)** in `docs/adr/`:
-   - ADR-001: TypeScript + React + Vite
-   - ADR-002: Tauri vs Electron for desktop
-   - ADR-003: Editing engine and licensing (pdf-lib vs PDFium-WASM vs MuPDF)
-   - ADR-004: Platform abstraction layer design
-   - ADR-005: Local-only processing (no server)
+   - ADR-0001: License and dependency policy (**decided:** Apache-2.0, permissive deps only)
+   - ADR-0002: TypeScript + React + Vite
+   - ADR-0003: Tauri vs Electron for desktop
+   - ADR-0004: Editing engine (pdf-lib, with PDFium-WASM as fallback)
+   - ADR-0005: Platform abstraction layer design
+   - ADR-0006: Local-only processing (no server)
 5. **Technical spikes** (throwaway prototypes, 1–2 days each):
    - Render a 500-page PDF with PDF.js and measure memory and scroll speed.
    - Use pdf-lib to add an annotation and save, then reopen in Acrobat and confirm it
@@ -137,7 +143,10 @@ wireframes reviewed with at least 3 potential users.
    - **CodeQL** static analysis
    - **Dependency scanning** (Dependabot + `pnpm audit`, `cargo audit`)
    - **Secret scanning**
-   - **License check** to block GPL/AGPL dependencies unless ADR-003 allows them
+   - **License check** against an allowlist of permissive licenses: `license-checker`
+     for npm, `cargo deny` for Rust. Any GPL/LGPL/AGPL or unknown license fails the build
+   - **DCO check:** contributors sign off commits (`git commit -s`). No CLA, so the
+     project can't later be relicensed as closed source
 4. Branch protection: PRs required, CI must pass, at least 1 review.
 5. Set up the Vitest and Playwright harnesses with one passing example test each.
 6. Seed `test-corpus/` with roughly 50 PDFs.
@@ -237,7 +246,11 @@ automated extraction tests.
    explicitly picks, strict CSP, no remote content loaded into the webview.
 3. Auto-updater with **signed updates**.
 4. **Code signing:** Windows (Authenticode), macOS (Developer ID + notarization), Linux
-   (signed AppImage/deb/rpm, optionally Flatpak).
+   (signed AppImage/deb/rpm, optionally Flatpak). The app is free, but signing has some
+   costs. Windows signing can be free through the **SignPath Foundation** program for
+   open-source projects. macOS needs an Apple Developer account (US$99/year). Without it,
+   unsigned macOS builds still work, but users must approve them manually. Linux signing
+   is free (GPG). Flathub and winget are free distribution channels.
 5. Installers: `.msi`/`.exe`, `.dmg`, `.AppImage`/`.deb`/`.rpm`.
 
 **Tests:** `cargo test` for Rust commands, Playwright E2E against the desktop build,
@@ -327,7 +340,9 @@ crash-free sessions ≥ 99.5% in beta.
   oversized images (decompression bombs), deeply nested objects, known CVE reproducers
   (for example the PDF.js font CVE-2024-4367)
 - Sources: PDF.js test suite, Mozilla pdf.js-corpus, the qpdf test suite, plus our own.
-  Check licenses before committing third-party files.
+  Only commit third-party PDFs whose license allows redistribution, and record each
+  file's source and license in `test-corpus/SOURCES.md`. Bundled fonts must also be
+  permissive (for example SIL OFL or Apache-2.0).
 
 ---
 
@@ -436,20 +451,22 @@ with a 1-page summary in `docs/research/`.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | Editing existing text is much harder than expected | Scope slip | Kept out of 1.0 scope. Prototype early in a spike |
-| pdf-lib limits (maintenance pace, unsupported features) | Blocks editing features | ADR-003 evaluates PDFium-WASM/MuPDF as a fallback; `core` hides the engine behind interfaces |
+| pdf-lib limits (maintenance pace, unsupported features) | Blocks editing features | PDFium-WASM as a fallback (ADR-0004); `core` hides the engine behind interfaces. Forking pdf-lib is allowed under MIT |
 | PDF.js security vulnerabilities | User compromise | Pin and patch quickly, disable eval/JS, fuzzing, CSP |
 | Real-world PDFs break the app | Bad reviews | Large corpus, fuzzing, beta crash reports, graceful error UI |
 | Browser API gaps (for example File System Access API missing in Firefox/Safari) | Worse web UX | Fallback to download/upload in the `platform` adapter |
-| Code-signing cost and setup time | Release delay | Start Apple/Windows certificate procurement in Phase 1 |
-| Licensing conflict (AGPL dependencies) | Legal | License check in CI, ADR-003 decision |
+| Code-signing cost and setup time | Release delay | Apply to SignPath Foundation (free for OSS) and decide on the Apple account in Phase 1 |
+| A copyleft dependency slips in (including through sub-dependencies) | Can't be distributed under Apache-2.0 | License allowlist enforced in CI, SBOM reviewed each release (ADR-0001) |
 
 ---
 
 ## 9. Immediate Next Steps
 
 1. Review this plan and confirm the tech stack and 1.0 scope.
-2. Decide **ADR-003 (editing engine and licensing)** and the project's own license
-   (for example MIT, Apache-2.0, or proprietary).
-3. Start Phase 0: personas, competitive review, requirements backlog.
-4. Run the three technical spikes.
-5. Scaffold the monorepo and CI (Phase 1).
+2. ~~Decide the project license~~ **Done:** Apache-2.0, permissive dependencies only
+   (ADR-0001).
+3. Apply to SignPath Foundation for free Windows code signing, and decide whether to buy
+   an Apple Developer account.
+4. Start Phase 0: personas, competitive review, requirements backlog.
+5. Run the three technical spikes.
+6. Scaffold the monorepo and CI (Phase 1).
