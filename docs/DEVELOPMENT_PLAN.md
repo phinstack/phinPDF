@@ -16,8 +16,8 @@ Build a PDF viewer and editor that:
 
 ### Non-goals for v1
 
-- Full reflow editing of existing body text, like a word processor. This is very hard in
-  PDF and is deferred to a later phase (see Phase 9).
+- Editing existing text in a PDF (changing or reflowing body text, like a word processor).
+  This is very hard in PDF. **Confirmed** as post-1.0 work (see Phase 9).
 - Cloud storage, accounts, real-time collaboration.
 - OCR of scanned documents (candidate for v2).
 - Mobile-native apps. The web build should still be usable on tablets.
@@ -226,7 +226,6 @@ correctly in at least 3 other viewers.
 - Edit document metadata (title, author)
 - Compress / optimize on save
 - Export pages as images (PNG/JPEG)
-- *(Stretch)* Simple edits of existing single-line text where the font is embedded
 
 **Unit tests:** page-operation commands, merge/split correctness (page counts, content
 preserved, bookmarks fixed up), redaction tests that **verify removed text cannot be
@@ -450,7 +449,7 @@ with a 1-page summary in `docs/research/`.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Editing existing text is much harder than expected | Scope slip | Kept out of 1.0 scope. Prototype early in a spike |
+| Editing existing text is much harder than expected | Scope slip | Kept out of 1.0 scope (confirmed). Prototype in a spike before starting it in v2 |
 | pdf-lib limits (maintenance pace, unsupported features) | Blocks editing features | PDFium-WASM as a fallback (ADR-0004); `core` hides the engine behind interfaces. Forking pdf-lib is allowed under MIT |
 | PDF.js security vulnerabilities | User compromise | Pin and patch quickly, disable eval/JS, fuzzing, CSP |
 | Real-world PDFs break the app | Bad reviews | Large corpus, fuzzing, beta crash reports, graceful error UI |
@@ -462,7 +461,7 @@ with a 1-page summary in `docs/research/`.
 
 ## 9. Immediate Next Steps
 
-1. Review this plan and confirm the tech stack and 1.0 scope.
+1. ~~Confirm the 1.0 scope~~ **Done:** editing existing text is deferred until after 1.0.
 2. ~~Decide the project license~~ **Done:** Apache-2.0, permissive dependencies only
    (ADR-0001).
 3. Apply to SignPath Foundation for free Windows code signing, and decide whether to buy
