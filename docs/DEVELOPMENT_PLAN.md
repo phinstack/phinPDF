@@ -7,8 +7,12 @@ Build a PDF viewer and editor that:
 - Runs in a **web browser** (no install, works offline as a PWA) and as a **desktop app**
   (Windows and Linux) from **one shared codebase**. macOS users can use the web version.
   A native macOS app is deferred until after 1.0.
-- Lets users **view** (render, zoom, search, navigate, print) and **edit** (annotate,
-  fill forms, sign, reorder/rotate/delete/merge pages, add text and images, redact) PDFs.
+- **1.0 scope (decided 2026-10-07):** **view** (open, scroll, navigate, bookmarks,
+  password-protected files), **zoom**, **search**, **print**, and **annotate** with
+  highlight, underline, and sticky notes, saved as standard PDF annotations.
+- After 1.0: forms, signatures, page organizing, merging and splitting, drawing, text
+  boxes and images, passwords, and the rest of the editing features (see Phase 9).
+  Redaction and compression won't be built.
 - Processes documents **locally**. Files never leave the user's device unless the user
   chooses to share them. This is both a privacy feature and a smaller security surface.
 - Treats every PDF as **untrusted input**.
@@ -37,7 +41,7 @@ for both targets.
 | Language | **TypeScript** (strict mode) | Runs natively in browsers, strong typing, best PDF library ecosystem for the web |
 | UI framework | **React** + **Vite** | Mature, fast builds, large hiring/help pool |
 | Rendering | **PDF.js** (Mozilla, Apache-2.0), legacy build (ADR-0007) | Battle-tested (powers Firefox's viewer), text layer, search, forms, accessibility |
-| Editing / writing | **PDFium-WASM** (`@embedpdf/pdfium`: MIT wrapper, Apache-2.0 PDFium) for annotations, forms, page ops, redaction, and saving (ADR-0004) | Chrome's PDF engine. In the spikes it was the only option that kept encryption, did true redaction, and saved fastest. pdf-lib is unmaintained since 2022 |
+| Editing / writing | **PDFium-WASM** (`@embedpdf/pdfium`: MIT wrapper, Apache-2.0 PDFium) for annotations, forms, page ops, passwords, and saving (ADR-0004) | Chrome's PDF engine. In the spikes it was the only option that kept encryption, had a real annotation API, and saved fastest. pdf-lib is unmaintained since 2022 |
 | State | **Zustand** + a command/undo stack | Simple, testable, makes undo/redo easy |
 | Desktop shell | **Tauri 2** (Rust) | ~10 MB installers vs ~150 MB for Electron, locked-down IPC, OS webview |
 | Web deployment | Static hosting + **PWA** (service worker) | Offline use, "install" from the browser, no backend needed |
@@ -86,18 +90,19 @@ not only in the dedicated phases.
 
 | Phase | Name | Est. duration |
 |---|---|---|
-| 0 | Planning & Discovery | 2 weeks |
-| 1 | Foundation & Infrastructure | 1–2 weeks |
+| 0 | Planning & Discovery | 2 weeks (technical part done) |
+| 1 | Foundation & Infrastructure | 1–2 weeks (done) |
 | 2 | Viewer MVP | 3–4 weeks |
-| 3 | Annotations & Forms | 3–4 weeks |
-| 4 | Page & Content Editing | 4–5 weeks |
+| 3 | Annotations: highlight, underline, sticky notes | 2–3 weeks |
+| 4 | Page & Content Editing | *after 1.0* |
 | 5 | Desktop App | 2–3 weeks |
 | 6 | Security Assessment & Hardening | 2–3 weeks (runs alongside 5) |
 | 7 | User Testing (Alpha → Beta) | 4–6 weeks |
 | 8 | Release 1.0 | 1–2 weeks |
 | 9 | Post-release / v2 | Ongoing |
 
-**Total to 1.0: roughly 5–7 months.**
+**Total to 1.0: roughly 3–4½ months from now** (Phases 2, 3, 5–8), after the 1.0 scope
+was narrowed on 2026-10-07. Previously 5–7 months.
 
 ---
 
@@ -200,8 +205,7 @@ desktop build artifact is produced for Windows and Linux.
 - Go to page, keyboard navigation
 - Print
 - Password-protected PDF support (prompt for password)
-- Dark mode
-- Recent files list
+- Dark mode (interface; already built)
 
 **Technical tasks:**
 - Run PDF.js in a **Web Worker** so parsing never blocks the UI
@@ -227,52 +231,50 @@ coverage ≥ 80% in `core` and `renderer`, performance budgets met.
 
 ---
 
-### Phase 3 — Annotations & Forms (3–4 weeks)
+### Phase 3 — Annotations (2–3 weeks)
 
-**Features:**
-- Highlight, underline, strikethrough (text-anchored)
-- Freehand ink drawing, shapes (rectangle, ellipse, line, arrow)
-- Sticky-note comments and a comment panel
-- Free-text boxes
-- **Fill AcroForm fields** (text, checkbox, radio, dropdown), flatten on save as an option
-- **Signatures:** draw, type, or upload an image, then place it on the page.
-  (Cryptographic digital signatures come in v2.)
+**Features (1.0 scope):**
+- **Highlight** and **underline** selected text (text-anchored, choice of colour)
+- **Sticky notes**: place, edit, move, and delete
+- Show existing annotations from other apps, and edit or delete the ones phinPDF supports
 - Undo/redo for every action (command pattern in `core`)
 - **Save** as standard PDF annotations so Acrobat, Edge, Okular, and others can read them.
-  Use incremental save where possible.
+  Saving keeps a file's existing encryption (ADR-0004).
 
 **Unit tests:** every edit command (apply / undo / redo / serialize), coordinate
-transforms (screen ↔ PDF user space, including rotated pages), form-field value
-round-trips, save → reopen round-trip tests that assert annotations survive.
+transforms (screen ↔ PDF user space, including rotated pages), save → reopen round-trip
+tests that assert annotations survive.
 **Interoperability tests:** save in phinPDF, then check the file in Acrobat Reader,
 Microsoft Edge, Okular/Evince (Linux), Chrome, and Firefox (manual checklist plus automated
 reopen in PDF.js).
 
-**Exit gate:** Annotated and form-filled files round-trip without loss and render
-correctly in at least 3 other viewers.
+**Exit gate:** Annotated files round-trip without loss and render correctly in at least
+3 other viewers. **1.0 is feature-complete at this point.**
 
 ---
 
-### Phase 4 — Page & Content Editing (4–5 weeks)
+### Phase 4 — Page & Content Editing (moved after 1.0)
+
+**Not in 1.0** (decided 2026-10-07). Kept here as the plan for 1.1+. Phases 5–8 follow
+Phase 3 directly.
 
 **Features:**
 - Page organizer: reorder (drag and drop), rotate, delete, duplicate, insert blank page
 - Merge multiple PDFs, split or extract pages
 - Insert images and new text blocks
-- **Redaction** that actually removes the underlying content (text, images, metadata),
-  not just a black box drawn on top. This is security-critical, see §5. Select by exact
-  character boxes and show a preview before applying: in the spike, a padded rectangle
-  also removed letters from the neighbouring line.
 - Edit document metadata (title, author)
-- Compress / optimize on save
+- **Add or remove a password** (AES-256 only when adding; removing requires the current
+  password)
 - Export pages as images (PNG/JPEG)
+- *Not in 1.0 (decided 2026-10-07):* redaction and compression
 
 **Unit tests:** page-operation commands, merge/split correctness (page counts, content
-preserved, bookmarks fixed up), redaction tests that **verify removed text cannot be
-extracted** after save, metadata scrubbing.
+preserved, bookmarks fixed up), password tests (files encrypted by phinPDF open in
+Acrobat, Edge, and qpdf with the password and not without it; removing a password needs
+the old one), metadata edits.
 
-**Exit gate:** Feature-complete for 1.0 scope, all tests green, redaction verified by
-automated extraction tests.
+**Exit gate:** All tests green, encrypted output verified by qpdf and at least two other
+viewers.
 
 ---
 
@@ -337,6 +339,12 @@ crash-free sessions ≥ 99.5% in beta.
 
 ### Phase 9 — Post-release / v2 candidates
 
+- **1.1 candidates** (cut from 1.0 on 2026-10-07, in rough priority order for the two user
+  profiles): form filling, signatures (draw/type/image), page organizing (Phase 4),
+  merge and split, reopen at last page and recent files, annotations list panel,
+  strikethrough, freehand drawing and shapes, text boxes and images, dark page view,
+  export pages as images, add/remove passwords
+- **Won't build:** redaction, compression
 - Cryptographic digital signatures (PAdES) and signature validation
 - OCR for scanned PDFs (Tesseract-WASM)
 - True editing of existing body text (reflow)
@@ -400,7 +408,7 @@ and **data leaks**.
 | **Code execution via malicious PDF** | Exploit in a font, image codec, or JS engine (for example CVE-2024-4367 in PDF.js) | Keep PDF.js and PDFium patched and pinned, **never execute PDF-embedded JavaScript** (no PDF.js scripting sandbox), parse in a Web Worker, strict CSP with no `unsafe-eval` and no `unsafe-inline` |
 | **Desktop sandbox escape** | Webview compromise reaches the file system or shell through IPC | Tauri capability allowlist, no shell/exec commands, FS scope limited to files the user picked, validate all IPC input on the Rust side |
 | **Information disclosure** | PDF "phones home" through links, remote fonts/images, or form submit actions | Local-only processing, block automatic network requests from documents, confirm before opening external links, ignore `SubmitForm`/`Launch` actions |
-| **Failed redaction** | "Redacted" text is still extractable | Real content removal + automated extraction tests + metadata/hidden-layer scrub |
+| **Weak or broken encryption** | User adds a password but the file is weakly encrypted, or saving silently drops encryption | AES-256 only for new passwords; save keeps existing encryption (spike 2 showed one library silently decrypts); round-trip tests with qpdf and other viewers |
 | **Denial of service** | Decompression bombs, recursive objects, huge pages | Resource limits (memory, page size, recursion depth), timeouts, worker that can be killed and restarted |
 | **Tampering / supply chain** | Compromised npm/crates dependency or update server | Lockfiles, dependency review, `pnpm audit`/`cargo audit`, SBOM (CycloneDX), signed releases, signed auto-updates, pinned GitHub Actions |
 | **Spoofing** | Fake update, unsigned installer | Code signing on all platforms, update signature verification |
@@ -416,7 +424,7 @@ and **data leaks**.
 | **Fuzzing** | Nightly from Phase 2 | Mutated corpus fed to open/render/edit/save paths; crashes and hangs filed as bugs automatically |
 | Dynamic scanning (DAST) | Phase 6, before each release | OWASP ZAP against the web deployment (headers, CSP, misconfig) |
 | Malicious-PDF test suite | Every PR (in E2E) | Corpus of malicious PDFs must open safely, or be rejected, with no network calls and no script execution |
-| Manual secure code review | Phase 6 | Focus on IPC handlers, file handling, redaction, save/serialize, CSP |
+| Manual secure code review | Phase 6 | Focus on IPC handlers, file handling, encryption, save/serialize, CSP |
 | Tauri config review | Phase 5/6 | Capabilities, CSP, updater keys, FS scopes |
 | **External penetration test** | Phase 6 (if budget allows) | Third-party firm or bug-bounty style review of desktop + web |
 | SBOM generation | Every release | CycloneDX |
@@ -440,7 +448,7 @@ and **data leaks**.
 |---|---|---|---|---|
 | **Concept / wireframe test** | Phase 0 | 3–5 target users | Clickable Figma prototype, think-aloud | Validate layout and feature priorities before coding |
 | **Usability round 1** | End of Phase 2 | 5–6 users | Moderated remote sessions (45 min), task-based | Viewer usability |
-| **Usability round 2** | End of Phase 4 | 5–6 *new* users | Moderated, task-based | Annotation, forms, page-editing usability |
+| **Usability round 2** | End of Phase 3 | 5–6 *new* users | Moderated, task-based | Annotation usability (highlight, underline, notes, save) |
 | **Closed alpha** | Phase 7, weeks 1–2 | 15–30 invited users | Real-world use, in-app feedback button, weekly survey | Find bugs and workflow gaps |
 | **Accessibility audit** | Phase 7 | Users of screen readers (NVDA and JAWS on Windows, Orca on Linux) and keyboard-only users + automated axe scans | Task-based + WCAG 2.2 AA checklist | Accessibility compliance |
 | **Public beta** | Phase 7, weeks 3–6 | Open sign-up | Opt-in, privacy-respecting crash reporting and anonymous usage metrics; feedback forum | Scale testing, stability, compatibility with real-world PDFs |
@@ -449,10 +457,10 @@ and **data leaks**.
 
 1. Open a PDF and find the paragraph that mentions "invoice total".
 2. Highlight two sentences and add a comment to one.
-3. Fill in and sign a 2-page form, then save it.
-4. Combine three PDFs into one and delete page 4.
-5. Redact a phone number, save, and email the file. (Then we verify the number is truly gone.)
-6. Rotate a scanned page and export page 1 as an image.
+3. Underline a sentence, save, close, and reopen the file.
+4. Print pages 2–3 of a long document.
+5. Open a password-protected PDF.
+6. Zoom to fit the page width and jump to a bookmark.
 
 ### 6.3 Metrics and success criteria
 

@@ -1,6 +1,6 @@
 # User Profiles
 
-- **Status:** Draft. Target users decided on 2026-10-07: **office workers** and **students**.
+- **Status:** Target users (**office workers** and **students**) and 1.0 feature scope decided on 2026-10-07.
 - Details marked *(assumption)* are defaults until research says otherwise. The user
   research rounds in Phase 7 (and the wireframe review in Phase 0) should confirm or
   correct them.
@@ -28,7 +28,7 @@ of them, it wins over one that helps neither.
 3. Combine several PDFs into one (for example invoices for an expense claim), or pull
    out a few pages.
 4. Add a comment or highlight before forwarding to a colleague.
-5. Occasionally remove personal details before sharing (redaction).
+5. Occasionally remove personal details before sharing (redaction; won't be built).
 
 **Frustrations today:**
 
@@ -115,49 +115,59 @@ These users can still use phinPDF, but their needs don't drive 1.0 decisions:
 
 ---
 
-## Draft feature priorities for 1.0
+## Feature priorities for 1.0
 
-Derived from the two profiles. **Please review:** change any rating you disagree with.
+**Decided 2026-10-07.** 1.0 is a focused **reader with light annotation**. The middle
+columns show how much each profile needs a feature; the last column is the decision.
 
-| Feature | Office worker | Student | Proposed for 1.0 |
+| Feature | Office worker | Student | Decision |
 |---|---|---|---|
-| View, zoom, scroll, page navigation | Must | Must | **Must** |
-| Search | Must | Must | **Must** |
-| Print | Must | Should | **Must** |
-| Bookmarks/outline panel | Should | Must | **Must** |
-| Open password-protected PDFs | Must | Could | **Must** |
-| Highlight, underline, strikethrough | Should | Must | **Must** |
-| Sticky notes / comments | Must | Must | **Must** |
-| Annotations list panel | Could | Must | **Should** |
-| Fill in forms | Must | Should | **Must** |
-| Signatures (draw, type, image) | Must | Should | **Must** |
-| Reorder, rotate, delete pages | Must | Should | **Must** |
-| Merge and split PDFs | Must | Should | **Must** |
-| Freehand drawing and shapes | Could | Should | **Should** |
-| Add text boxes and images | Should | Could | **Should** |
-| Redaction | Should | Won't | **Should** |
-| Dark mode (interface) | Could | Must | **Must** (done) |
-| Dark page view (inverted pages) | Won't | Should | **Could** |
-| Reopen at last page / recent files | Should | Must | **Must** |
-| Export pages as images | Could | Could | **Could** |
-| Compress PDFs | Should | Could | **Could** |
-| Add/remove passwords | Could | Won't | **Could** |
-| Cryptographic digital signatures | Could | Won't | **Won't** (v2) |
-| OCR for scanned documents | Should | Should | **Won't** (v2) |
-| Edit existing text | Could | Won't | **Won't** (v2, decided) |
+| View: open, scroll, page navigation, bookmarks | Must | Must | **1.0** |
+| Open password-protected PDFs (part of viewing) | Must | Could | **1.0** |
+| Zoom | Must | Must | **1.0** |
+| Search | Must | Must | **1.0** |
+| Print | Must | Should | **1.0** |
+| Highlight | Should | Must | **1.0** |
+| Underline | Should | Must | **1.0** |
+| Sticky notes | Must | Must | **1.0** |
+| Save annotations so other apps can read them (needed for the three above) | Must | Must | **1.0** |
+| Dark mode (interface) | Could | Must | **1.0** (already built) |
+| Strikethrough | Could | Should | After 1.0 |
+| Annotations list panel | Could | Must | After 1.0 |
+| Dark page view (inverted pages) | Won't | Should | After 1.0 |
+| Reopen at last page / recent files | Should | Must | After 1.0 |
+| Fill in forms | Must | Should | After 1.0 |
+| Signatures (draw, type, image) | Must | Should | After 1.0 |
+| Reorder, rotate, delete pages | Must | Should | After 1.0 |
+| Merge and split PDFs | Must | Should | After 1.0 |
+| Freehand drawing and shapes | Could | Should | After 1.0 |
+| Add text boxes and images | Should | Could | After 1.0 |
+| Export pages as images | Could | Could | After 1.0 |
+| Add/remove passwords | Could | Won't | After 1.0 |
+| Cryptographic digital signatures | Could | Won't | v2 |
+| OCR for scanned documents | Should | Should | v2 |
+| Edit existing text | Could | Won't | v2 |
+| Redaction | Should | Won't | **Won't build** |
+| Compress PDFs | Should | Could | **Won't build** |
+
+**What this means for the profiles:** 1.0 fully serves the student's main tasks 1–3 and
+the office worker's tasks 1 and 4. Form filling, signing, and merging, the office
+worker's tasks 2 and 3, come after 1.0. They are the first candidates for 1.1.
 
 ## Test tasks for user research (from these profiles)
 
-Used for the wireframe review in Phase 0 and usability rounds in Phases 2, 4, and 7:
+Used for the wireframe review in Phase 0 and usability rounds in Phases 2, 3, and 7.
+Tasks marked *later* test features planned after 1.0.
 
 | # | Profile | Task |
 |---|---|---|
 | 1 | Office | Open the supplier contract and find the payment terms. |
-| 2 | Office | Fill in the expense form, sign it, and save it. |
-| 3 | Office | Combine three invoices into one PDF and remove the blank last page. |
-| 4 | Office | Remove the phone number from this document before sharing it. |
-| 5 | Student | Open the 400-page textbook and go to Chapter 7. |
-| 6 | Student | Highlight two key sentences and add a note to one of them. |
-| 7 | Student | Find every mention of "photosynthesis". |
-| 8 | Student | Close and reopen the textbook; continue where you stopped. |
-| 9 | Student | Review all your highlights from this chapter. |
+| 2 | Office | Highlight the cancellation clause and add a note for a colleague, then save. |
+| 3 | Office | Open the password-protected salary report and print page 2. |
+| 4 | Office | *(later)* Fill in the expense form, sign it, and save it. |
+| 5 | Office | *(later)* Combine three invoices into one PDF and remove the blank last page. |
+| 6 | Student | Open the 400-page textbook and go to Chapter 7. |
+| 7 | Student | Highlight two key sentences, underline a third, and add a note to one of them. |
+| 8 | Student | Find every mention of "photosynthesis". |
+| 9 | Student | Zoom so a page fills the screen width, then print pages 10–12. |
+| 10 | Student | Save, close, and reopen the file; check the highlights and notes are still there. |

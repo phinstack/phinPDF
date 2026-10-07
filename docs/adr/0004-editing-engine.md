@@ -13,7 +13,7 @@ tested both, plus a maintained pdf-lib fork, against the 1.0 feature list.
 
 Use **PDFium compiled to WebAssembly** (`@embedpdf/pdfium`; MIT wrapper, Apache-2.0 PDFium)
 as the **primary** engine for every write: annotations, forms, page operations,
-redaction, metadata, and saving.
+passwords, metadata, and saving.
 
 Keep **PDF.js** for rendering, the text layer, search, and accessibility (ADR-0007).
 
@@ -29,7 +29,9 @@ Do not use pdf-lib.
 | True redaction | No | No | Yes |
 | Save 33 MB / 504 pages | 3.1 s | 8.3 s | 1.8 s |
 
-Redaction and encrypted-file support are 1.0 requirements, and only PDFium does both.
+Encrypted-file support and a real annotation API are 1.0 requirements, and only PDFium
+has both. (Redaction was also a reason when this ADR was written; it was dropped from 1.0
+on 2026-10-07, which doesn't change the decision.)
 
 ## Rules for using PDFium
 
@@ -38,7 +40,8 @@ Redaction and encrypted-file support are 1.0 requirements, and only PDFium does 
   `finally` blocks. Unit tests check that the heap doesn't grow over 1,000 open/close cycles.
 - Fill text fields by simulating typing (`FORM_SetFocusedAnnot`, `FORM_ReplaceSelection`).
   Setting the value directly leaves the field blank in Poppler-based viewers.
-- Redact by exact character quads, never padded rectangles.
+- If redaction is added after 1.0: redact by exact character quads, never padded
+  rectangles (spike 2).
 
 ## Risks
 
