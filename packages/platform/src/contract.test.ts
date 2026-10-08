@@ -25,10 +25,14 @@ const webHarness: Harness = {
       if (file.size !== undefined) Object.defineProperty(blob, 'size', { value: file.size });
       return Promise.resolve([{ name: file.name, getFile: () => Promise.resolve(blob) }]);
     });
-    return new WebPlatform({
-      window: Object.assign(Object.create(window) as Window, { showOpenFilePicker: picker }),
-      document,
+    const win = Object.assign(Object.create(window) as Window, { showOpenFilePicker: picker });
+    // Delegate print() to the real window so tests can spy on it.
+    Object.defineProperty(win, 'print', {
+      value: () => {
+        window.print();
+      },
     });
+    return new WebPlatform({ window: win, document });
   },
 };
 
@@ -72,7 +76,27 @@ describe.each([webHarness, desktopHarness])('$name contract', (harness) => {
     const file = { id: 'x', name: 'x.pdf', bytes: PDF };
     await expect(platform.saveFile(file, PDF)).rejects.toBeInstanceOf(NotImplementedError);
     await expect(platform.saveFileAs('x.pdf', PDF)).rejects.toBeInstanceOf(NotImplementedError);
-    await expect(platform.print(PDF)).rejects.toBeInstanceOf(NotImplementedError);
+  });
+
+  it('reads a dropped file', async () => {
+    const dropped = new File([PDF], 'dropped.pdf', { type: 'application/pdf' });
+    const file = await harness.create(null).openDroppedFile(dropped);
+    expect(file.name).toBe('dropped.pdf');
+    expect(Array.from(file.bytes)).toEqual(Array.from(PDF));
+  });
+
+  it('rejects a dropped file over the size limit', async () => {
+    const dropped = new File([PDF], 'huge.pdf');
+    Object.defineProperty(dropped, 'size', { value: MAX_FILE_BYTES + 1 });
+    await expect(harness.create(null).openDroppedFile(dropped)).rejects.toBeInstanceOf(
+      FileTooLargeError,
+    );
+  });
+
+  it('opens the system print dialog', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+    await harness.create(null).print(PDF);
+    expect(print).toHaveBeenCalledTimes(1);
   });
 
   it('starts with no recent files', async () => {

@@ -1,4 +1,4 @@
-import { expect, readCorpus, test } from './fixtures.ts';
+import { expect, readCorpus, test, waitForPage } from './fixtures.ts';
 
 // Chromium-based browsers (Chrome, Edge) use the File System Access API instead of an
 // <input type=file>. Playwright can't drive that picker, so stub it with a corpus file.
@@ -20,8 +20,9 @@ test('opens through showOpenFilePicker in Chromium', async ({ page, browserName,
     });
   }, bytes);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Open PDF…' }).click();
-  await expect(page.getByRole('status')).toHaveText('outline.pdf — 3 pages');
+  await page.getByRole('button', { name: 'Choose a PDF…' }).click();
+  await waitForPage(page, 1);
+  await expect(page.getByRole('region', { name: 'outline.pdf, 3 pages' })).toBeVisible();
   expect(problems).toEqual([]);
 });
 
@@ -33,7 +34,7 @@ test('treats a cancelled showOpenFilePicker as no-op', async ({ page, browserNam
     });
   });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Open PDF…' }).click();
+  await page.getByRole('button', { name: 'Choose a PDF…' }).click();
   await expect(page.getByRole('status')).toHaveText('No document open.');
   await expect(page.getByRole('alert')).toHaveCount(0);
   expect(problems).toEqual([]);

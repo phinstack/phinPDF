@@ -92,7 +92,7 @@ not only in the dedicated phases.
 |---|---|---|
 | 0 | Planning & Discovery | 2 weeks (done) |
 | 1 | Foundation & Infrastructure | 1–2 weeks (done) |
-| 2 | Viewer MVP | 3–4 weeks |
+| 2 | Viewer MVP | 3–4 weeks (built) |
 | 3 | Annotations: highlight, underline, sticky notes | 2–3 weeks |
 | 4 | Page & Content Editing | *after 1.0* |
 | 5 | Desktop App | 2–3 weeks |
@@ -234,6 +234,18 @@ on a 1,000-page document; memory under 500 MB.
 
 **Exit gate:** All corpus PDFs open without crashes (malformed ones show a friendly error),
 coverage ≥ 80% in `core` and `renderer`, performance budgets met.
+
+**Status (2026-10-08): built.** All Must features above are in, except "open by URL"
+(dropped: it would make the app fetch remote content, against ADR-0006). Also added:
+rotate view, Automatic zoom, drag and drop on desktop and web, and Acrobat-style shortcuts.
+Results against the performance budgets are in [docs/performance.md](performance.md):
+first page under 1 s met; memory and main-thread stalls are within budget on normal long
+documents but slightly over on the worst-case stress file. Moving page drawing off the main
+thread is the follow-up, scheduled before the beta.
+
+Found and fixed while testing: a damaged page tree (cyclic-page-tree.pdf) left the viewer
+on "Loading pages…" forever, and the page-number box could be rewritten by a settling
+scroll while the user typed, sending them to the wrong page.
 
 ---
 

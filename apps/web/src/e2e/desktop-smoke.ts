@@ -7,13 +7,15 @@ import { invoke } from '@tauri-apps/api/core';
 
 const TIMEOUT_MS = 30_000;
 
+/** Waits until page 1 is drawn and its text layer is ready; returns the document's label. */
 async function waitForRender(): Promise<string> {
   const started = Date.now();
   for (;;) {
-    const status = document.querySelector('[role=status]');
     const error = document.querySelector('[role=alert]');
     if (error) throw new Error(`app error: ${error.textContent}`);
-    if (status?.getAttribute('data-rendered') === 'true') return status.textContent;
+    const page = document.querySelector('.phinpdf-page[data-page="1"][data-text-ready="true"]');
+    const region = document.querySelector('.phinpdf-scroller');
+    if (page && region) return region.getAttribute('aria-label') ?? '';
     if (Date.now() - started > TIMEOUT_MS) throw new Error('timed out waiting for render');
     await new Promise((r) => setTimeout(r, 100));
   }
