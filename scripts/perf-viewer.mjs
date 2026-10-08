@@ -43,11 +43,7 @@ const chooser = page.waitForEvent('filechooser');
 await page.getByRole('button', { name: 'Choose a PDF…' }).click();
 const t0 = Date.now();
 await (await chooser).setFiles(file);
-await page.locator('.phinpdf-page[data-page="1"] canvas').waitFor();
-await page.waitForFunction(() => {
-  const c = document.querySelector('.phinpdf-page[data-page="1"] canvas');
-  return c && c.width > 0;
-});
+await page.locator('.phinpdf-page[data-page="1"][data-rendered="true"]').waitFor();
 const firstPageMs = Date.now() - t0;
 await page.locator('.phinpdf-page[data-page="1"][data-text-ready="true"]').waitFor();
 const total = Number((await page.getByText(/^\/ \d+$/).textContent()).replace(/\D/g, ''));

@@ -48,10 +48,12 @@ export async function openViaButton(page: Page, file: string): Promise<void> {
   await (await chooser).setFiles(corpusFile(file));
 }
 
-/** Waits until a page (1-based) is drawn with its text layer in place. */
+/** Waits until a page (1-based) is drawn and its text layer is in place. */
 export async function waitForPage(page: Page, pageNumber: number): Promise<void> {
   await page
-    .locator(`.phinpdf-page[data-page="${String(pageNumber)}"][data-text-ready="true"]`)
+    .locator(
+      `.phinpdf-page[data-page="${String(pageNumber)}"][data-text-ready="true"][data-rendered="true"]`,
+    )
     .waitFor({ timeout: 20_000 });
 }
 

@@ -93,6 +93,9 @@ export function PageView({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState<TextLayerResult | null>(null);
+  // The canvas render that finished last, so tests and tools can tell when the page is drawn.
+  const [drawn, setDrawn] = useState<string | null>(null);
+  const renderKey = `${String(pageNumber)}@${String(scale)}/${String(rotation)}`;
 
   // Draw the page. Cancelled when the page scrolls out of range or the zoom changes.
   useEffect(() => {
@@ -100,11 +103,17 @@ export function PageView({
     if (!canvas) return;
     const controller = new AbortController();
     const pixelRatio = globalThis.devicePixelRatio || 1;
+    const key = `${String(pageNumber)}@${String(scale)}/${String(rotation)}`;
     source
       .renderPage(pageNumber, canvas, { scale, rotation, pixelRatio, signal: controller.signal })
-      .catch((error: unknown) => {
-        if (!isCancellation(error)) onError?.(error);
-      });
+      .then(
+        () => {
+          if (!controller.signal.aborted) setDrawn(key);
+        },
+        (error: unknown) => {
+          if (!isCancellation(error)) onError?.(error);
+        },
+      );
     return () => {
       controller.abort();
     };
@@ -159,6 +168,7 @@ export function PageView({
       aria-label={label}
       data-page={pageNumber}
       data-text-ready={text ? 'true' : 'false'}
+      data-rendered={drawn === renderKey ? 'true' : 'false'}
       style={{ top, left, width, height }}
     >
       <canvas ref={canvasRef} aria-hidden="true" />

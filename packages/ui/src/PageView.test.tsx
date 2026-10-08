@@ -24,6 +24,7 @@ describe('PageView', () => {
     await waitFor(() => {
       expect(page).toHaveAttribute('data-text-ready', 'true');
     });
+    expect(page).toHaveAttribute('data-rendered', 'true');
     expect(source.renderPage).toHaveBeenCalledWith(
       2,
       expect.any(HTMLCanvasElement),

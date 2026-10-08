@@ -13,7 +13,9 @@ async function waitForRender(): Promise<string> {
   for (;;) {
     const error = document.querySelector('[role=alert]');
     if (error) throw new Error(`app error: ${error.textContent}`);
-    const page = document.querySelector('.phinpdf-page[data-page="1"][data-text-ready="true"]');
+    const page = document.querySelector(
+      '.phinpdf-page[data-page="1"][data-text-ready="true"][data-rendered="true"]',
+    );
     const region = document.querySelector('.phinpdf-scroller');
     if (page && region) return region.getAttribute('aria-label') ?? '';
     if (Date.now() - started > TIMEOUT_MS) throw new Error('timed out waiting for render');
