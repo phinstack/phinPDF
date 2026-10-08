@@ -1,12 +1,6 @@
+import { readFile } from '../files.ts';
 import { sanitizeExternalUrl } from '../links.ts';
-import {
-  FileTooLargeError,
-  MAX_FILE_BYTES,
-  NotImplementedError,
-  type OpenedFile,
-  type Platform,
-  type RecentFile,
-} from '../types.ts';
+import { NotImplementedError, type OpenedFile, type Platform, type RecentFile } from '../types.ts';
 
 /** Minimal File System Access API types (not yet in TypeScript's DOM lib). */
 interface FileSystemFileHandleLike {
@@ -26,17 +20,7 @@ export interface WebPlatformEnv {
   readonly confirm?: (message: string) => boolean;
 }
 
-let nextId = 0;
-
-async function toOpenedFile(file: File): Promise<OpenedFile> {
-  if (file.size > MAX_FILE_BYTES) throw new FileTooLargeError(file.size);
-  nextId += 1;
-  return {
-    id: `web-${String(nextId)}`,
-    name: file.name,
-    bytes: new Uint8Array(await file.arrayBuffer()),
-  };
-}
+const toOpenedFile = (file: File): Promise<OpenedFile> => readFile(file, 'web');
 
 export class WebPlatform implements Platform {
   readonly kind = 'web' as const;
@@ -102,8 +86,12 @@ export class WebPlatform implements Platform {
   }
 
   getLaunchFile(): Promise<OpenedFile | null> {
-    // File handling for the installed PWA (launchQueue) arrives with Phase 2.
+    // File handling for the installed PWA (launchQueue) is not supported yet.
     return Promise.resolve(null);
+  }
+
+  openDroppedFile(file: File): Promise<OpenedFile> {
+    return toOpenedFile(file);
   }
 
   saveFile(): Promise<void> {
@@ -115,7 +103,8 @@ export class WebPlatform implements Platform {
   }
 
   print(): Promise<void> {
-    return Promise.reject(new NotImplementedError('Printing', 'Phase 2'));
+    this.#env.window.print();
+    return Promise.resolve();
   }
 
   openExternalLink(url: string): Promise<boolean> {

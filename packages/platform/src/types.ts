@@ -27,6 +27,8 @@ export interface Platform {
   openFile(): Promise<OpenedFile | null>;
   /** The file the app was launched with ("Open with", double-click), if any. */
   getLaunchFile(): Promise<OpenedFile | null>;
+  /** A file the user dragged onto the window. */
+  openDroppedFile(file: File): Promise<OpenedFile>;
   saveFile(file: OpenedFile, bytes: Uint8Array): Promise<void>;
   saveFileAs(suggestedName: string, bytes: Uint8Array): Promise<OpenedFile | null>;
   print(bytes: Uint8Array): Promise<void>;

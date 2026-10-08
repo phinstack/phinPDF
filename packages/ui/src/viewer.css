@@ -1,0 +1,117 @@
+/* Text layer rules adapted from pdfjs-dist/web/pdf_viewer.css (Apache-2.0). The text layer
+   is transparent, positioned over the canvas, and makes text selectable and searchable. */
+.textLayer {
+  color-scheme: only light;
+  position: absolute;
+  text-align: initial;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  z-index: 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.textLayer span,
+.textLayer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.textLayer > :not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.textLayer ::selection {
+  background: rgb(0 0 255 / 25%);
+  background: color-mix(in srgb, AccentColor, transparent 50%);
+  color: transparent;
+}
+
+.textLayer br::selection {
+  background: transparent;
+}
+
+.textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+.textLayer[data-main-rotation='90'] {
+  transform: rotate(90deg) translateY(-100%);
+}
+.textLayer[data-main-rotation='180'] {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+.textLayer[data-main-rotation='270'] {
+  transform: rotate(270deg) translateX(-100%);
+}
+
+/* Search matches. The text stays transparent; the mark paints behind it. */
+.textLayer mark.phinpdf-hit {
+  position: static;
+  color: transparent;
+  background: rgb(250 204 21 / 55%);
+  border-radius: 2px;
+  margin: -1px;
+  padding: 1px;
+}
+.textLayer mark.phinpdf-hit.current {
+  background: rgb(234 88 12 / 60%);
+  outline: 2px solid rgb(194 65 12);
+}
+
+/* Pages */
+.phinpdf-scroller {
+  position: relative;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.phinpdf-scroller:focus-visible {
+  outline: 3px solid var(--accent, #b91c1c);
+  outline-offset: -3px;
+}
+.phinpdf-page {
+  position: absolute;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 30%);
+  overflow: hidden;
+}
+.phinpdf-page canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.phinpdf-page-number {
+  position: absolute;
+  inset: auto 0 -1.4em;
+  text-align: center;
+  font-size: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .phinpdf-page {
+    box-shadow: 0 1px 6px rgb(0 0 0 / 70%);
+  }
+}

@@ -1,3 +1,4 @@
+import { readFile } from '../files.ts';
 import {
   FileTooLargeError,
   MAX_FILE_BYTES,
@@ -33,6 +34,11 @@ export class DesktopPlatform implements Platform {
     return this.#read(await this.#invoke<FileMeta | null>('launch_file'));
   }
 
+  /** Dropped files come from the webview as File objects; no path reaches it. */
+  openDroppedFile(file: File): Promise<OpenedFile> {
+    return readFile(file, 'drop');
+  }
+
   async #read(meta: FileMeta | null): Promise<OpenedFile | null> {
     if (!meta) return null;
     if (meta.size > MAX_FILE_BYTES) throw new FileTooLargeError(meta.size);
@@ -49,7 +55,9 @@ export class DesktopPlatform implements Platform {
   }
 
   print(): Promise<void> {
-    return Promise.reject(new NotImplementedError('Printing', 'Phase 5'));
+    // WebView2 and WebKitGTK both show the system print dialog.
+    globalThis.print();
+    return Promise.resolve();
   }
 
   openExternalLink(): Promise<boolean> {

@@ -13,7 +13,12 @@ if (!root) throw new Error('#root element missing');
 
 createRoot(root).render(
   <StrictMode>
-    <App platform={platform} openDocument={(bytes) => openDocument(bytes)} />
+    <App
+      platform={platform}
+      openDocument={(bytes, password) =>
+        openDocument(bytes, password === undefined ? {} : { password })
+      }
+    />
   </StrictMode>,
 );
 

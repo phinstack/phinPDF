@@ -12,7 +12,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['packages/*/src/**', 'apps/web/src/**'],
-      exclude: ['**/*.test.*', '**/index.ts', '**/main.tsx', '**/e2e/**', '**/*.d.ts'],
+      exclude: [
+        '**/*.test.*',
+        '**/index.ts',
+        '**/main.tsx',
+        '**/e2e/**',
+        '**/*.d.ts',
+        '**/src/test/**',
+      ],
       reporter: ['text', 'html', 'lcov'],
       // Plan §4: >= 85% for core, >= 80% overall.
       thresholds: {

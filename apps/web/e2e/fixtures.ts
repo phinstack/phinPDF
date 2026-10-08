@@ -39,11 +39,22 @@ export const test = base.extend<{ problems: string[] }>({
   },
 });
 
-/** Opens a corpus file through the app's "Open PDF…" button. */
+/** Opens a corpus file from the start screen, or with the toolbar's Open button. */
 export async function openViaButton(page: Page, file: string): Promise<void> {
   const chooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Open PDF…' }).click();
+  const start = page.getByRole('button', { name: 'Choose a PDF…' });
+  if (await start.isVisible()) await start.click();
+  else await page.getByRole('button', { name: 'Open', exact: true }).click();
   await (await chooser).setFiles(corpusFile(file));
+}
+
+/** Waits until a page (1-based) is drawn and its text layer is in place. */
+export async function waitForPage(page: Page, pageNumber: number): Promise<void> {
+  await page
+    .locator(
+      `.phinpdf-page[data-page="${String(pageNumber)}"][data-text-ready="true"][data-rendered="true"]`,
+    )
+    .waitFor({ timeout: 20_000 });
 }
 
 /** Forces the <input type=file> fallback so all browsers take the same path. */
@@ -53,16 +64,18 @@ export async function disableFileSystemAccess(page: Page): Promise<void> {
   });
 }
 
-/** Counts non-white pixels in the page canvas, sampling every 8th pixel. */
-export function inkedPixels(page: Page): Promise<number> {
-  return page.getByRole('img').evaluate((canvas: HTMLCanvasElement) => {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return 0;
-    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let n = 0;
-    for (let i = 0; i < data.length; i += 32) if ((data[i] ?? 255) < 200) n++;
-    return n;
-  });
+/** Counts non-white pixels in a page's canvas (1-based), sampling every 8th pixel. */
+export function inkedPixels(page: Page, pageNumber = 1): Promise<number> {
+  return page
+    .locator(`.phinpdf-page[data-page="${String(pageNumber)}"] canvas`)
+    .evaluate((canvas: HTMLCanvasElement) => {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return 0;
+      const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let n = 0;
+      for (let i = 0; i < data.length; i += 32) if ((data[i] ?? 255) < 200) n++;
+      return n;
+    });
 }
 
 export const readCorpus = (file: string): Buffer => readFileSync(corpusFile(file));

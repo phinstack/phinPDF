@@ -18,7 +18,8 @@
         "width": 1100,
         "height": 850,
         "minWidth": 480,
-        "minHeight": 400
+        "minHeight": 400,
+        "dragDropEnabled": false
       }
     ],
     "security": {
@@ -54,9 +55,17 @@
       }
     ],
     "linux": {
-      "deb": { "desktopTemplate": "linux.desktop.hbs" },
-      "rpm": { "desktopTemplate": "linux.desktop.hbs" }
+      "deb": {
+        "desktopTemplate": "linux.desktop.hbs"
+      },
+      "rpm": {
+        "desktopTemplate": "linux.desktop.hbs"
+      }
     },
-    "windows": { "nsis": { "installMode": "currentUser" } }
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
   }
 }

@@ -149,6 +149,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@phinpdf/core':
+        specifier: workspace:*
+        version: link:../core
       '@phinpdf/renderer':
         specifier: workspace:*
         version: link:../renderer
