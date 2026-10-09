@@ -271,6 +271,7 @@ button:disabled {
   height: 100%;
 }
 .viewer-body {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -288,7 +289,7 @@ button:disabled {
   text-align: center;
 }
 .sidebar {
-  width: 180px;
+  width: 240px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -297,12 +298,13 @@ button:disabled {
 }
 .tabs {
   display: flex;
-  gap: 16px;
+  gap: 10px;
   padding: 0 14px;
   border-bottom: 1px solid var(--border);
 }
 .tabs [role='tab'] {
   padding: 8px 0;
+  white-space: nowrap;
   border: 0;
   border-bottom: 2px solid transparent;
   background: none;
@@ -439,6 +441,170 @@ button:disabled {
   margin-left: auto;
 }
 
+/* ---------- Comments ---------- */
+.dirty {
+  color: var(--accent);
+  font-weight: 700;
+}
+.tab-count {
+  color: var(--muted);
+}
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.color-picker {
+  position: relative;
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgb(0 0 0 / 35%);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.swatch.current {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  cursor: inherit;
+}
+.swatches {
+  display: flex;
+  gap: 8px;
+}
+.swatch[aria-checked='true'] {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.popover {
+  position: absolute;
+  z-index: 30;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 20%);
+}
+.color-popover {
+  top: calc(100% + 4px);
+  left: 0;
+}
+.selection-menu {
+  position: fixed;
+  z-index: 40;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 25%);
+  transform: translateX(-50%);
+}
+.selection-menu .text-button {
+  border-color: transparent;
+}
+.annotation-card {
+  position: absolute;
+  z-index: 20;
+  top: 12px;
+  right: 24px;
+  width: min(300px, calc(100% - 48px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+}
+.annotation-card header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.annotation-card h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+.card-page {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+.card-meta {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.card-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+.card-comment textarea {
+  resize: vertical;
+  min-height: 80px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.comments {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow-y: auto;
+}
+.comments button {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.comments button:hover {
+  background: var(--bg);
+}
+.comments button[aria-current='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.comment-kind {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 60%));
+}
+.comment-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.comment-title {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.comment-body {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Dialogs ---------- */
 .phinpdf-dialog {
   width: min(420px, calc(100% - 32px));
@@ -452,7 +618,8 @@ button:disabled {
 .phinpdf-dialog::backdrop {
   background: rgb(24 24 27 / 45%);
 }
-.phinpdf-dialog form {
+.phinpdf-dialog form,
+.phinpdf-dialog-body {
   display: flex;
   flex-direction: column;
   gap: 12px;

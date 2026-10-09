@@ -5,6 +5,7 @@
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -39,10 +40,7 @@ impl FileRegistry {
         if meta.len() > MAX_FILE_BYTES {
             return Err("file too large".into());
         }
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "document.pdf".into());
+        let name = display_name(path);
         let mut reg = self.inner.lock().map_err(|_| "registry poisoned")?;
         reg.next += 1;
         let id = format!("file-{}", reg.next);
@@ -51,6 +49,20 @@ impl FileRegistry {
             id,
             name,
             size: meta.len(),
+        })
+    }
+
+    /// Saves over a registered file. See `write_pdf` for the checks.
+    pub fn write(&self, id: &str, bytes: &[u8]) -> Result<FileMeta, String> {
+        let path = {
+            let reg = self.inner.lock().map_err(|_| "registry poisoned")?;
+            reg.files.get(id).cloned().ok_or("unknown file")?
+        };
+        write_pdf(&path, bytes)?;
+        Ok(FileMeta {
+            id: id.to_string(),
+            name: display_name(&path),
+            size: bytes.len() as u64,
         })
     }
 
@@ -73,6 +85,50 @@ impl FileRegistry {
     }
 }
 
+fn display_name(path: &Path) -> String {
+    path.file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "document.pdf".into())
+}
+
+/// Writes a PDF to a path the user chose, atomically: the bytes go to a temporary file in
+/// the same folder, which then replaces the target. A crash or full disk mid-save leaves
+/// the original intact. Only PDFs within the size limit are written.
+pub fn write_pdf(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    if bytes.len() as u64 > MAX_FILE_BYTES {
+        return Err("file too large".into());
+    }
+    if !looks_like_pdf(bytes) {
+        return Err("not a PDF".into());
+    }
+    if path.is_dir() {
+        return Err("not a regular file".into());
+    }
+    let dir = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let mut tmp_name = std::ffi::OsString::from(".");
+    tmp_name.push(path.file_name().ok_or("invalid file name")?);
+    tmp_name.push(".phinpdf-save");
+    let tmp = dir.join(tmp_name);
+    let result = (|| {
+        let mut file = fs::File::create(&tmp)?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        drop(file);
+        // Keep the original's permissions (for example read-only for group).
+        if let Ok(meta) = fs::metadata(path) {
+            fs::set_permissions(&tmp, meta.permissions())?;
+        }
+        fs::rename(&tmp, path)
+    })();
+    result.map_err(|e| {
+        let _ = fs::remove_file(&tmp);
+        format!("cannot save file: {e}")
+    })
+}
+
 /// True if `%PDF-` appears in the first 1024 bytes (same rule as the renderer).
 pub fn looks_like_pdf(bytes: &[u8]) -> bool {
     let head = &bytes[..bytes.len().min(1024)];
@@ -82,7 +138,6 @@ pub fn looks_like_pdf(bytes: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
 
     fn temp_file(contents: &[u8]) -> tempfile::NamedTempFile {
         let mut f = tempfile::Builder::new().suffix(".pdf").tempfile().unwrap();
@@ -130,6 +185,49 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         assert_eq!(reg.register(dir.path()), Err("not a regular file".into()));
         assert!(reg.register(&dir.path().join("missing.pdf")).is_err());
+    }
+
+    #[test]
+    fn saves_over_registered_files_atomically() {
+        let reg = FileRegistry::default();
+        let f = temp_file(b"%PDF-1.7\nold\n");
+        let meta = reg.register(f.path()).unwrap();
+        let saved = reg.write(&meta.id, b"%PDF-1.7\nnew content\n").unwrap();
+        assert_eq!(saved.id, meta.id);
+        assert_eq!(reg.read(&meta.id).unwrap(), b"%PDF-1.7\nnew content\n");
+        // No temporary file is left behind.
+        let dir = f.path().parent().unwrap();
+        let leftovers: Vec<_> = fs::read_dir(dir)
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|e| e.file_name().to_string_lossy().ends_with(".phinpdf-save"))
+            .collect();
+        assert!(leftovers.is_empty());
+    }
+
+    #[test]
+    fn refuses_to_save_non_pdfs_or_unknown_tokens() {
+        let reg = FileRegistry::default();
+        let f = temp_file(b"%PDF-1.7\n");
+        let meta = reg.register(f.path()).unwrap();
+        assert_eq!(reg.write(&meta.id, b"MZ"), Err("not a PDF".into()));
+        assert_eq!(reg.read(&meta.id).unwrap(), b"%PDF-1.7\n");
+        assert_eq!(
+            reg.write("file-99", b"%PDF-1.7"),
+            Err("unknown file".into())
+        );
+    }
+
+    #[test]
+    fn writes_new_files_and_refuses_directories() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("copy.pdf");
+        write_pdf(&target, b"%PDF-1.7\n").unwrap();
+        assert_eq!(fs::read(&target).unwrap(), b"%PDF-1.7\n");
+        assert_eq!(
+            write_pdf(dir.path(), b"%PDF-1.7"),
+            Err("not a regular file".into())
+        );
     }
 
     #[test]

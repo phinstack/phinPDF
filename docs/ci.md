@@ -4,7 +4,7 @@
 
 | Workflow | Runs on | Jobs |
 |---|---|---|
-| `ci.yml` | Every push and PR | Lint, format, typecheck, unit tests + coverage, license policy, `pnpm audit`, web build · E2E in Chromium, Firefox, WebKit · Rust fmt, clippy, tests, `cargo deny` · Desktop smoke test and installers on Linux and Windows · gitleaks secret scan · dependency review (PRs) |
+| `ci.yml` | Every push and PR | Lint, format, typecheck, unit tests + coverage (including interop checks with qpdf and Poppler), license policy, `pnpm audit`, web build · E2E in Chromium, Firefox, WebKit · Rust fmt, clippy, tests, `cargo deny` · Desktop smoke test and installers on Linux and Windows · gitleaks secret scan · dependency review (PRs) |
 | `codeql.yml` | Push, PR, weekly | CodeQL `security-extended` for TypeScript, Rust, and the workflows themselves |
 | `dco.yml` | PRs | Every commit has a `Signed-off-by` line |
 | `pages.yml` | Push to the default branch | Builds and deploys the web app to GitHub Pages, once Pages is enabled |

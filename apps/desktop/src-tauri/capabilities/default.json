@@ -3,5 +3,14 @@
   "identifier": "default",
   "description": "Core defaults plus the app's file commands. No fs, shell, http, or dialog permissions for the webview.",
   "windows": ["main"],
-  "permissions": ["core:default", "allow-launch-file", "allow-pick-file", "allow-read-file"]
+  "permissions": [
+    "core:default",
+    "allow-launch-file",
+    "allow-pick-file",
+    "allow-read-file",
+    "allow-save-file",
+    "allow-save-file-as",
+    "allow-set-unsaved-changes",
+    "allow-close-window"
+  ]
 }

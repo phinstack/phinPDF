@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@phinpdf/core": "workspace:*",
     "pdfjs-dist": "6.4.299"
   }
 }

@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import type { ItemRange } from '@phinpdf/core';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import type { Annotation, ItemRange, PageGeometry, ViewTransform } from '@phinpdf/core';
 import type { RenderDocument, TextLayerResult } from '@phinpdf/renderer';
+import { hitTestMarkup, NOTE_ICON_PX, noteRectAt } from './annotation-hit.ts';
+import { AnnotationLayer, type AnnotationHandlers } from './AnnotationLayer.tsx';
 
 /** The parts of a document a page view needs (narrow, so tests can fake it). */
 export type PageSource = Pick<RenderDocument, 'renderPage' | 'renderTextLayer'>;
@@ -25,7 +27,13 @@ export interface PageViewProps {
   readonly label: string;
   readonly highlights?: PageHighlights | undefined;
   readonly onError?: ((error: unknown) => void) | undefined;
+  /** The page's crop box and rotation. Annotations are only shown when it is known. */
+  readonly geometry?: PageGeometry | undefined;
+  readonly annotations?: readonly Annotation[] | undefined;
+  readonly annotationHandlers?: AnnotationHandlers | undefined;
 }
+
+const NO_ANNOTATIONS: readonly Annotation[] = [];
 
 function isCancellation(error: unknown): boolean {
   return (
@@ -89,6 +97,9 @@ export function PageView({
   label,
   highlights,
   onError,
+  geometry,
+  annotations = NO_ANNOTATIONS,
+  annotationHandlers: handlers,
 }: PageViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -161,7 +172,30 @@ export function PageView({
     };
   }, [text, highlights]);
 
+  const transform = useMemo<ViewTransform | null>(
+    () => (geometry ? { geometry, scale, rotation } : null),
+    [geometry, scale, rotation],
+  );
+
+  // Clicks select highlights and underlines (which sit under the text layer), or place a
+  // note with the note tool. A click that ends a text selection does neither.
+  const onClick = (event: MouseEvent<HTMLDivElement>): void => {
+    if (!handlers || !transform || event.button !== 0) return;
+    const box = event.currentTarget.getBoundingClientRect();
+    const point = { x: event.clientX - box.left, y: event.clientY - box.top };
+    if (handlers.tool === 'note') {
+      const corner = { x: point.x - NOTE_ICON_PX / 2, y: point.y - NOTE_ICON_PX / 2 };
+      handlers.onPlaceNote(pageNumber - 1, noteRectAt(corner, transform));
+      return;
+    }
+    const selection = globalThis.getSelection();
+    if (selection && !selection.isCollapsed) return;
+    handlers.onSelect(hitTestMarkup(annotations, transform, point)?.id ?? null);
+  };
+
   return (
+    // Clicking is a pointer convenience; every action has a keyboard path (toolbar, notes,
+    // comments panel), so the page itself is not a control.
     <div
       className="phinpdf-page"
       role="img"
@@ -169,10 +203,32 @@ export function PageView({
       data-page={pageNumber}
       data-text-ready={text ? 'true' : 'false'}
       data-rendered={drawn === renderKey ? 'true' : 'false'}
+      data-tool={handlers?.tool}
       style={{ top, left, width, height }}
+      onClick={onClick}
     >
       <canvas ref={canvasRef} aria-hidden="true" />
+      {transform && handlers && (
+        <AnnotationLayer
+          annotations={annotations}
+          transform={transform}
+          width={width}
+          height={height}
+          handlers={handlers}
+          layer="marks"
+        />
+      )}
       <div ref={textRef} className="textLayer" />
+      {transform && handlers && (
+        <AnnotationLayer
+          annotations={annotations}
+          transform={transform}
+          width={width}
+          height={height}
+          handlers={handlers}
+          layer="notes"
+        />
+      )}
     </div>
   );
 }

@@ -110,6 +110,64 @@
   font-size: 12px;
 }
 
+/* Annotations. Highlights multiply with the page like a real highlighter. They take no
+   pointer events, so the text layer above stays selectable. */
+.phinpdf-annots,
+.phinpdf-selection {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.phinpdf-annots {
+  mix-blend-mode: multiply;
+}
+.phinpdf-selection {
+  z-index: 2;
+}
+.phinpdf-selection rect {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.phinpdf-note {
+  position: absolute;
+  z-index: 3;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+}
+.phinpdf-note:active {
+  cursor: grabbing;
+}
+.phinpdf-note svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 35%));
+}
+.phinpdf-note.selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+.phinpdf-note:focus-visible {
+  outline: 3px solid var(--accent, #b91c1c);
+  outline-offset: 1px;
+}
+.phinpdf-page[data-tool='note'],
+.phinpdf-page[data-tool='note'] .textLayer span {
+  cursor: crosshair;
+}
+@media (forced-colors: active) {
+  .phinpdf-annots {
+    mix-blend-mode: normal;
+    opacity: 0.5;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   .phinpdf-page {
     box-shadow: 0 1px 6px rgb(0 0 0 / 70%);

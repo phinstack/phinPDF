@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createEditor } from '@phinpdf/editor';
 import { createPlatform } from '@phinpdf/platform';
 import { openDocument } from '@phinpdf/renderer';
 import { App } from './App.tsx';
@@ -15,6 +16,7 @@ createRoot(root).render(
   <StrictMode>
     <App
       platform={platform}
+      editor={createEditor()}
       openDocument={(bytes, password) =>
         openDocument(bytes, password === undefined ? {} : { password })
       }

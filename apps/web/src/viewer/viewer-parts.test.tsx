@@ -27,6 +27,17 @@ describe('Toolbar', () => {
     onRotate: vi.fn(),
     onToggleSidebar: vi.fn(),
     onToggleSearch: vi.fn(),
+    tool: 'select',
+    toolColor: { r: 255, g: 235, b: 59 },
+    dirty: false,
+    saving: false,
+    canUndo: false,
+    canRedo: false,
+    onTool: vi.fn(),
+    onToolColor: vi.fn(),
+    onSave: vi.fn(),
+    onUndo: vi.fn(),
+    onRedo: vi.fn(),
     ...over,
   });
 

@@ -269,6 +269,33 @@ reopen in PDF.js).
 **Exit gate:** Annotated files round-trip without loss and render correctly in at least
 3 other viewers. **1.0 is feature-complete at this point.**
 
+**Status (2026-10-09): built.** All features above are in:
+
+- Highlight and underline work from the quick menu next to selected text, from the toolbar
+  buttons (applied to the current selection), or with a marker tool that marks each
+  selection.
+- Sticky notes can be placed, dragged, nudged with the arrow keys, given comments, and
+  deleted.
+- Every annotation has a colour, a comment, and Delete. A Comments panel in the sidebar
+  lists them all (the keyboard path to each one).
+- Undo and redo (Ctrl+Z, Ctrl+Y) cover every action.
+- Save (Ctrl+S) writes back to the file where the platform allows it. Save as
+  (Ctrl+Shift+S) writes a copy. The browser falls back to a download.
+- Closing or opening another file with unsaved changes asks first.
+- Printing includes highlights and underlines.
+
+The design is in [ADR-0008](adr/0008-annotations.md). Saving is incremental (the original
+bytes are kept and the changes appended), and encryption is kept.
+
+Round-trip tests save with PDFium and read back with PDF.js, and cover encrypted and damaged
+files. Automated interop tests check structure and encryption with qpdf and drawing with
+Poppler (the engine in Okular and Evince). PDF.js and PDFium are the engines in Firefox,
+Chrome, and Edge. Manual checks in Acrobat Reader and the other apps:
+[docs/interop.md](interop.md).
+
+Not in this phase: the author name on comments (empty for now; a setting comes later), and
+showing annotations in page thumbnails.
+
 ---
 
 ### Phase 4 — Page & Content Editing (moved after 1.0)

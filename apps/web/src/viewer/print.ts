@@ -1,10 +1,36 @@
+import { pdfRectToView, rgbToCss, type Annotation, type ViewTransform } from '@phinpdf/core';
 import type { RenderDocument } from '@phinpdf/renderer';
 
 /** Print resolution. 150 dpi keeps text sharp without huge memory use. */
 export const PRINT_DPI = 150;
 const CONTAINER_ID = 'phinpdf-print';
 
-type PrintSource = Pick<RenderDocument, 'renderPage' | 'numPages'>;
+type PrintSource = Pick<RenderDocument, 'renderPage' | 'numPages' | 'getPageGeometry'>;
+
+/**
+ * Draws highlights and underlines onto a printed page. PDF.js doesn't draw them (phinPDF
+ * does, see RenderDocument.getAnnotations). Note icons are left out: their text can't be
+ * printed, and an icon alone only covers the page.
+ */
+export function drawAnnotations(
+  context: CanvasRenderingContext2D,
+  annotations: readonly Annotation[],
+  transform: ViewTransform,
+): void {
+  context.save();
+  for (const a of annotations) {
+    if (a.kind === 'note') continue;
+    context.globalCompositeOperation = a.kind === 'highlight' ? 'multiply' : 'source-over';
+    context.fillStyle = rgbToCss(a.color);
+    for (const r of a.rects) {
+      const rect =
+        a.kind === 'highlight' ? r : { ...r, y1: r.y0 + Math.max((r.y1 - r.y0) * 0.08, 0.75) };
+      const box = pdfRectToView(rect, transform);
+      context.fillRect(box.left, box.top, box.width, box.height);
+    }
+  }
+  context.restore();
+}
 
 function toBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -33,6 +59,7 @@ export async function printDocument(
   print: () => Promise<void>,
   onProgress: (done: number) => void,
   signal: AbortSignal,
+  annotationsFor: (pageIndex: number) => readonly Annotation[] = () => [],
 ): Promise<void> {
   cleanupPrint();
   const container = document.createElement('div');
@@ -43,7 +70,14 @@ export async function printDocument(
     for (let n = 1; n <= doc.numPages; n++) {
       signal.throwIfAborted();
       const canvas = document.createElement('canvas');
-      await doc.renderPage(n, canvas, { scale: PRINT_DPI / 72, pixelRatio: 1, signal });
+      const scale = PRINT_DPI / 72;
+      await doc.renderPage(n, canvas, { scale, pixelRatio: 1, signal });
+      const annotations = annotationsFor(n - 1);
+      const context = annotations.length > 0 ? canvas.getContext('2d') : null;
+      if (context) {
+        const geometry = await doc.getPageGeometry(n);
+        drawAnnotations(context, annotations, { geometry, scale, rotation: 0 });
+      }
       const blob = await toBlob(canvas);
       canvas.width = 0;
       canvas.height = 0;

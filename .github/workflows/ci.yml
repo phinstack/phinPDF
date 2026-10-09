@@ -29,7 +29,13 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
+      - name: Install qpdf and Poppler (interoperability tests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qpdf poppler-utils
       - run: pnpm test:coverage
+        env:
+          PHINPDF_REQUIRE_INTEROP: '1'
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

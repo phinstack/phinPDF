@@ -99,3 +99,18 @@ describe('CommandStack', () => {
     expect(stack.canUndo).toBe(false);
   });
 });
+
+describe('CommandStack.amend', () => {
+  it('changes the state without an undo step and notifies listeners', () => {
+    const stack = new CommandStack(0);
+    const listener = vi.fn();
+    stack.subscribe(listener);
+    stack.execute(add(2));
+    stack.amend((s) => s + 10);
+    expect(stack.state).toBe(12);
+    expect(listener).toHaveBeenLastCalledWith(12);
+    stack.undo();
+    expect(stack.state).toBe(10);
+    expect(stack.canUndo).toBe(false);
+  });
+});

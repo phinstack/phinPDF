@@ -13,8 +13,11 @@ export function isDesktop(global: object = globalThis): boolean {
  */
 export async function createPlatform(): Promise<Platform> {
   if (isDesktop()) {
-    const { invoke } = await import('@tauri-apps/api/core');
-    return new DesktopPlatform(invoke);
+    const [{ invoke }, { listen }] = await Promise.all([
+      import('@tauri-apps/api/core'),
+      import('@tauri-apps/api/event'),
+    ]);
+    return new DesktopPlatform(invoke, (event, handler) => listen(event, handler));
   }
   return new WebPlatform({ window, document });
 }

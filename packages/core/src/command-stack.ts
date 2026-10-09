@@ -80,6 +80,16 @@ export class CommandStack<S> {
     return true;
   }
 
+  /**
+   * Changes the state without recording an undo step, for changes that are not edits
+   * (for example, annotations loaded from the file). `change` must commute with every
+   * command, which holds for commands that address items by id.
+   */
+  amend(change: (state: S) => S): void {
+    this.#set(change(this.#state));
+    this.#emit();
+  }
+
   /** Subscribe to state changes. Returns an unsubscribe function. */
   subscribe(listener: Listener<S>): () => void {
     this.#listeners.add(listener);

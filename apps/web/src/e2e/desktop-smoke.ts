@@ -42,6 +42,15 @@ export async function runDesktopSmoke(): Promise<void> {
     result['shellPlugin'] = await mustFail(() => invoke('plugin:shell|execute', { program: 'sh' }));
     result['dialogPluginFromWebview'] = await mustFail(() => invoke('plugin:dialog|open', {}));
     result['readUnissuedToken'] = await mustFail(() => invoke('read_file', { id: 'forged-token' }));
+    const pdfBytes = new TextEncoder().encode('%PDF-1.7\n');
+    result['saveUnissuedToken'] = await mustFail(() =>
+      invoke('save_file', pdfBytes, { headers: { 'x-file-id': 'forged-token' } }),
+    );
+    // The launch file is file-1; Rust must refuse to overwrite it with something that isn't a PDF.
+    result['saveNonPdf'] = await mustFail(() =>
+      invoke('save_file', new TextEncoder().encode('MZ'), { headers: { 'x-file-id': 'file-1' } }),
+    );
+    result['saveJsonBody'] = await mustFail(() => invoke('save_file', { id: 'file-1' }));
     result['network'] = await mustFail(() => fetch('https://example.com/'));
     result['eval'] = await mustFail(() => {
       // Indirect eval: verifying that the CSP blocks it.

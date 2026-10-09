@@ -1,6 +1,8 @@
 import { useLayoutEffect, useState, type RefObject, type SyntheticEvent } from 'react';
-import { formatZoom, type ZoomMode } from '@phinpdf/core';
-import { Icon } from '../icons.tsx';
+import { formatZoom, type Rgb, type ZoomMode } from '@phinpdf/core';
+import type { AnnotationTool } from '@phinpdf/ui';
+import { Icon, type IconName } from '../icons.tsx';
+import { ColorPicker } from './ColorPicker.tsx';
 
 const PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 
@@ -22,7 +24,26 @@ export interface ToolbarProps {
   readonly onRotate: () => void;
   readonly onToggleSidebar: () => void;
   readonly onToggleSearch: () => void;
+  readonly tool: AnnotationTool;
+  readonly toolColor: Rgb;
+  readonly dirty: boolean;
+  readonly saving: boolean;
+  readonly canUndo: boolean;
+  readonly canRedo: boolean;
+  readonly undoLabel?: string | undefined;
+  readonly redoLabel?: string | undefined;
+  readonly onTool: (tool: AnnotationTool) => void;
+  readonly onToolColor: (color: Rgb) => void;
+  readonly onSave: () => void;
+  readonly onUndo: () => void;
+  readonly onRedo: () => void;
 }
+
+const TOOLS: readonly { tool: AnnotationTool; label: string; icon: IconName; hint: string }[] = [
+  { tool: 'highlight', label: 'Highlight', icon: 'highlight', hint: 'Select text to highlight it' },
+  { tool: 'underline', label: 'Underline', icon: 'underline', hint: 'Select text to underline it' },
+  { tool: 'note', label: 'Sticky note', icon: 'note', hint: 'Click the page to add a note' },
+];
 
 function zoomValue(mode: ZoomMode): string {
   return mode.kind === 'scale' ? `scale:${String(mode.scale)}` : mode.kind;
@@ -96,7 +117,7 @@ function PageBox({
   );
 }
 
-/** The viewer toolbar (wireframe 2): file, pages, zoom, rotate, sidebar, search. */
+/** The viewer toolbar (wireframe 2): file, pages, zoom, rotate, comment tools, search. */
 export function Toolbar(props: ToolbarProps) {
   const { pageIndex, pageCount, zoom, zoomMode } = props;
   const custom = zoomMode.kind === 'scale' && !PRESETS.includes(zoomMode.scale);
@@ -121,6 +142,17 @@ export function Toolbar(props: ToolbarProps) {
         >
           <Icon name="open" size={16} />
           Open
+        </button>
+        <button
+          type="button"
+          className="icon"
+          aria-label={props.saving ? 'Saving…' : 'Save'}
+          aria-keyshortcuts="Control+S"
+          title={props.dirty ? 'Save changes (Ctrl+S)' : 'No unsaved changes'}
+          disabled={!props.dirty || props.saving}
+          onClick={props.onSave}
+        >
+          <Icon name="save" />
         </button>
         <button
           type="button"
@@ -205,7 +237,57 @@ export function Toolbar(props: ToolbarProps) {
       <button type="button" className="icon" aria-label="Rotate clockwise" onClick={props.onRotate}>
         <Icon name="rotate" />
       </button>
+      <span className="sep" />
+      <div className="group" role="group" aria-label="Comment tools">
+        {TOOLS.map(({ tool, label, icon, hint }) => (
+          <button
+            key={tool}
+            type="button"
+            className="icon"
+            aria-label={label}
+            aria-pressed={props.tool === tool}
+            title={`${label}: ${hint}`}
+            onClick={() => {
+              props.onTool(props.tool === tool ? 'select' : tool);
+            }}
+          >
+            <Icon name={icon} />
+          </button>
+        ))}
+        <ColorPicker
+          value={props.toolColor}
+          onChange={props.onToolColor}
+          label={`${TOOLS.find((t) => t.tool === props.tool)?.label ?? 'Highlight'} colour`}
+        />
+      </div>
+      <div className="group" role="group" aria-label="History">
+        <button
+          type="button"
+          className="icon"
+          aria-label={props.undoLabel ? `Undo ${props.undoLabel}` : 'Undo'}
+          aria-keyshortcuts="Control+Z"
+          disabled={!props.canUndo}
+          onClick={props.onUndo}
+        >
+          <Icon name="undo" />
+        </button>
+        <button
+          type="button"
+          className="icon"
+          aria-label={props.redoLabel ? `Redo ${props.redoLabel}` : 'Redo'}
+          aria-keyshortcuts="Control+Y"
+          disabled={!props.canRedo}
+          onClick={props.onRedo}
+        >
+          <Icon name="redo" />
+        </button>
+      </div>
       <span className="file-name" title={props.fileName}>
+        {props.dirty && (
+          <span className="dirty" aria-label="Unsaved changes" title="Unsaved changes">
+            •{' '}
+          </span>
+        )}
         {props.fileName}
       </span>
       <button

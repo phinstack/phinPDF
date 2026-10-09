@@ -1,0 +1,22 @@
+{
+  "name": "@phinpdf/editor",
+  "version": "0.0.0",
+  "private": true,
+  "description": "PDFium-WASM editing engine (annotations and saving), run in a Web Worker.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@embedpdf/pdfium": "2.15.1",
+    "@phinpdf/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/emscripten": "1.41.5",
+    "@phinpdf/renderer": "workspace:*"
+  }
+}

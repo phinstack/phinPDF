@@ -95,6 +95,9 @@ importers:
       '@phinpdf/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@phinpdf/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
       '@phinpdf/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -135,6 +138,22 @@ importers:
 
   packages/core: {}
 
+  packages/editor:
+    dependencies:
+      '@embedpdf/pdfium':
+        specifier: 2.15.1
+        version: 2.15.1
+      '@phinpdf/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@phinpdf/renderer':
+        specifier: workspace:*
+        version: link:../renderer
+      '@types/emscripten':
+        specifier: 1.41.5
+        version: 1.41.5
+
   packages/platform:
     dependencies:
       '@tauri-apps/api':
@@ -143,6 +162,9 @@ importers:
 
   packages/renderer:
     dependencies:
+      '@phinpdf/core':
+        specifier: workspace:*
+        version: link:../core
       pdfjs-dist:
         specifier: 6.4.299
         version: 6.4.299
@@ -387,6 +409,9 @@ packages:
   '@csstools/css-tokenizer@4.0.2':
     resolution: {integrity: sha512-OoKoR0f76dCY666JlcbhmVTs2drYj1GUXZTYTcbUgJjh9Nv41aFfZ21bPQTERm5+L5cBDo466NltB2lplS5GBw==}
     engines: {node: '>=20.19.0'}
+
+  '@embedpdf/pdfium@2.15.1':
+    resolution: {integrity: sha512-qDH4gEkGSQT0iM+07Hpm3LyvoB7PEFbW3Qyk6+LPkEYLJYfHagkHM1OzYlDq2EDOhJRguykTkzdMOT3/w27x5Q==}
 
   '@eslint-community/eslint-utils@4.10.1':
     resolution: {integrity: sha512-cuadcxVFE8sDK6iWJbs8Sn0av2Nrh2QSGQhVlBW9AaAHqHwjWsZHT8LJ4hFGPh7ASBV2deFdM7H/DPjulmh8rg==}
@@ -777,6 +802,9 @@ packages:
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
+
+  '@types/emscripten@1.41.5':
+    resolution: {integrity: sha512-cMQm7pxu6BxtHyqJ7mQZ2kXWV5SLmugybFdHCBbJ5eHzOo6VhBckEgAT3//rP5FwPHNPeEiq4SmQ5ucBwsOo4Q==}
 
   '@types/esrecurse@4.3.1':
     resolution: {integrity: sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw==}
@@ -2166,6 +2194,8 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.2': {}
 
+  '@embedpdf/pdfium@2.15.1': {}
+
   '@eslint-community/eslint-utils@4.10.1(eslint@10.12.0(jiti@2.6.1))':
     dependencies:
       eslint: 10.12.0(jiti@2.6.1)
@@ -2446,6 +2476,8 @@ snapshots:
       assertion-error: 2.0.1
 
   '@types/deep-eql@4.0.2': {}
+
+  '@types/emscripten@1.41.5': {}
 
   '@types/esrecurse@4.3.1': {}
 

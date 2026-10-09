@@ -1,5 +1,22 @@
-const COMMANDS: &[&str] = &["launch_file", "pick_file", "read_file"];
-const E2E_COMMANDS: &[&str] = &["launch_file", "pick_file", "read_file", "e2e_report"];
+const COMMANDS: &[&str] = &[
+    "launch_file",
+    "pick_file",
+    "read_file",
+    "save_file",
+    "save_file_as",
+    "set_unsaved_changes",
+    "close_window",
+];
+const E2E_COMMANDS: &[&str] = &[
+    "launch_file",
+    "pick_file",
+    "read_file",
+    "save_file",
+    "save_file_as",
+    "set_unsaved_changes",
+    "close_window",
+    "e2e_report",
+];
 
 fn main() {
     // Declaring the commands makes Tauri require an explicit capability grant for each

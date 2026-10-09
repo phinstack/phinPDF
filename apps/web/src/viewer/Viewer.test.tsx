@@ -4,23 +4,27 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Platform } from '@phinpdf/platform';
 import { fakeDoc } from '../test/fake-doc.ts';
-import { Viewer } from './Viewer.tsx';
+import { fakeEditor, fakePlatform } from '../test/fakes.ts';
+import { Viewer, type ViewerProps } from './Viewer.tsx';
 
-function platform(): Platform {
-  return {
-    kind: 'web',
-    openFile: vi.fn(),
-    getLaunchFile: vi.fn(),
-    openDroppedFile: vi.fn(),
-    saveFile: vi.fn(),
-    saveFileAs: vi.fn(),
-    print: vi.fn(() => {
-      window.dispatchEvent(new Event('afterprint'));
-      return Promise.resolve();
-    }),
-    openExternalLink: vi.fn(),
-    recentFiles: vi.fn(() => Promise.resolve([])),
-  };
+const platform = (): Platform => fakePlatform();
+
+const fileNamed = (name: string) => ({ id: 'f1', name, bytes: new Uint8Array([37, 80]) });
+
+/** Viewer with defaults for the props these tests don't care about. */
+function viewer(
+  props: Pick<ViewerProps, 'doc' | 'platform'> & Partial<ViewerProps> & { fileName?: string },
+) {
+  const { fileName = 'notes.pdf', ...rest } = props;
+  return (
+    <Viewer
+      file={fileNamed(fileName)}
+      editor={fakeEditor()}
+      onOpen={vi.fn()}
+      onSaved={vi.fn()}
+      {...rest}
+    />
+  );
 }
 
 async function setup(
@@ -36,7 +40,7 @@ async function setup(
   }
   const p = platform();
   const onOpen = vi.fn();
-  const utils = render(<Viewer doc={doc} fileName="notes.pdf" platform={p} onOpen={onOpen} />);
+  const utils = render(viewer({ doc, platform: p, onOpen }));
   await screen.findByRole('region', { name: `notes.pdf, ${String(pages.length)} pages` });
   return { doc, platform: p, onOpen, ...utils };
 }
@@ -197,7 +201,7 @@ describe('Viewer', () => {
   it('shows a banner when part of the document cannot be drawn', async () => {
     const doc = fakeDoc(['x']);
     doc.renderPage.mockRejectedValue(new Error('broken page'));
-    render(<Viewer doc={doc} fileName="bad.pdf" platform={platform()} onOpen={vi.fn()} />);
+    render(viewer({ doc, fileName: 'bad.pdf', platform: platform() }));
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Some parts of this document could not be displayed.',
     );

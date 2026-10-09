@@ -5,9 +5,12 @@ import {
   layoutPages,
   scrollTopForPage,
   visibleRange,
+  type Annotation,
   type Layout,
+  type PageGeometry,
   type Size,
 } from '@phinpdf/core';
+import type { AnnotationHandlers } from './AnnotationLayer.tsx';
 import { PAGE_GAP } from './constants.ts';
 import { PageView, type PageHighlights, type PageSource } from './PageView.tsx';
 import { useScrollMetrics } from './use-scroll-metrics.ts';
@@ -34,6 +37,11 @@ export interface DocumentViewProps {
   /** Ctrl+wheel zoom; `direction` is 1 to zoom in, -1 to zoom out. */
   readonly onWheelZoom?: ((direction: 1 | -1) => void) | undefined;
   readonly label: string;
+  /** Per-page crop boxes; annotations are drawn once these are known. */
+  readonly geometries?: readonly PageGeometry[] | undefined;
+  /** Annotations by 0-based page index. */
+  readonly annotations?: ReadonlyMap<number, readonly Annotation[]> | undefined;
+  readonly annotationHandlers?: AnnotationHandlers | undefined;
 }
 
 /**
@@ -52,6 +60,9 @@ export function DocumentView({
   onRenderError,
   onWheelZoom,
   label,
+  geometries,
+  annotations,
+  annotationHandlers,
 }: DocumentViewProps) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const metrics = useScrollMetrics(scrollerRef);
@@ -134,6 +145,9 @@ export function DocumentView({
         label={`Page ${String(i + 1)} of ${String(total)}`}
         highlights={highlights?.get(i)}
         onError={onRenderError}
+        geometry={geometries?.[i]}
+        annotations={annotations?.get(i)}
+        annotationHandlers={annotationHandlers}
       />,
     );
   }

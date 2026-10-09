@@ -24,3 +24,4 @@ export {
   resolveOutline,
   type OutlineNode,
 } from './outline.ts';
+export { toLoadedAnnotation, type LoadedAnnotation, type RawAnnotation } from './annotations.ts';

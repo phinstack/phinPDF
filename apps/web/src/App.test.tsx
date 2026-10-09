@@ -4,24 +4,23 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { FileTooLargeError, type OpenedFile, type Platform } from '@phinpdf/platform';
 import { OpenError } from '@phinpdf/renderer';
-import { App } from './App.tsx';
+import { App as RealApp, type AppProps } from './App.tsx';
 import { fakeDoc } from './test/fake-doc.ts';
+import { fakeEditor, fakePlatform as basePlatform } from './test/fakes.ts';
+
+/** The app with a fake editor unless a test supplies one. */
+function App(props: Omit<AppProps, 'editor'> & { editor?: AppProps['editor'] }) {
+  return <RealApp editor={props.editor ?? fakeEditor()} {...props} />;
+}
 
 const file = (name = 'doc.pdf', id = '1'): OpenedFile => ({ id, name, bytes: new Uint8Array([1]) });
 
 function fakePlatform(overrides: Partial<Platform> = {}): Platform {
-  return {
-    kind: 'web',
+  return basePlatform({
     openFile: vi.fn(() => Promise.resolve(file())),
-    getLaunchFile: vi.fn(() => Promise.resolve(null)),
     openDroppedFile: vi.fn((f: File) => Promise.resolve(file(f.name, 'drop'))),
-    saveFile: vi.fn(),
-    saveFileAs: vi.fn(),
-    print: vi.fn(() => Promise.resolve()),
-    openExternalLink: vi.fn(),
-    recentFiles: vi.fn(() => Promise.resolve([])),
     ...overrides,
-  };
+  });
 }
 
 const openButton = () => screen.getByRole('button', { name: 'Choose a PDF…' });
@@ -175,5 +174,128 @@ describe('App document lifecycle', () => {
     });
     unmount();
     expect(second.destroy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('App unsaved changes', () => {
+  /** Opens a.pdf (which has a note) and moves the note so there is an unsaved change. */
+  async function openAndEdit(platform: Platform, editor = fakeEditor()) {
+    const doc = fakeDoc(
+      ['one'],
+      [
+        {
+          sourceId: '1R',
+          key: { subtype: 'Text', rect: { x0: 0, y0: 0, x1: 20, y1: 20 }, name: null },
+          annotation: {
+            id: 'file-0-1R',
+            kind: 'note',
+            pageIndex: 0,
+            color: { r: 255, g: 235, b: 59 },
+            contents: 'hi',
+            author: '',
+            modified: null,
+            rect: { x0: 0, y0: 0, x1: 20, y1: 20 },
+          },
+        },
+      ],
+    );
+    const openDocument = vi.fn().mockResolvedValue(doc);
+    render(<App platform={platform} openDocument={openDocument} editor={editor} />);
+    await userEvent.click(openButton());
+    const note = await screen.findByRole('button', { name: 'Note: hi' });
+    fireEvent.keyDown(note, { key: 'ArrowRight' });
+    await waitFor(() => {
+      expect(platform.setUnsavedChanges).toHaveBeenLastCalledWith(true);
+    });
+    return { openDocument };
+  }
+
+  it('asks before opening another file, and Cancel keeps the document', async () => {
+    const platform = fakePlatform();
+    await openAndEdit(platform);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    const dialog = screen.getByRole('dialog', { name: 'Save changes?' });
+    expect(platform.openFile).toHaveBeenCalledTimes(1);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(platform.openFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("Don't save discards the changes and continues", async () => {
+    const platform = fakePlatform();
+    await openAndEdit(platform);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.click(screen.getByRole('button', { name: "Don't save" }));
+    await waitFor(() => {
+      expect(platform.openFile).toHaveBeenCalledTimes(2);
+    });
+    expect(platform.setUnsavedChanges).toHaveBeenLastCalledWith(false);
+  });
+
+  it('Save writes the file first, then continues', async () => {
+    const platform = fakePlatform();
+    const editor = fakeEditor();
+    await openAndEdit(platform, editor);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Save changes?' })).getByRole('button', {
+        name: 'Save',
+      }),
+    );
+    await waitFor(() => {
+      expect(platform.openFile).toHaveBeenCalledTimes(2);
+    });
+    expect(editor.save).toHaveBeenCalledTimes(1);
+    expect(platform.saveFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays put if saving from the prompt fails', async () => {
+    const platform = fakePlatform({ saveFile: vi.fn(() => Promise.resolve(null)) });
+    await openAndEdit(platform);
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }));
+    const dialog = screen.getByRole('dialog', { name: 'Save changes?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      expect(within(dialog).getByRole('button', { name: 'Save' })).toBeEnabled();
+    });
+    expect(platform.openFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('answers a desktop close request through the same prompt', async () => {
+    let handler: (() => Promise<boolean>) | null = null;
+    const platform = fakePlatform({
+      onCloseRequested: vi.fn((h: () => Promise<boolean>) => {
+        handler = h;
+        return () => undefined;
+      }),
+    });
+    await openAndEdit(platform);
+    const ask = (): Promise<boolean> => {
+      if (!handler) throw new Error('no handler');
+      return handler();
+    };
+    let answer: Promise<boolean> = Promise.resolve(false);
+    act(() => {
+      answer = ask();
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await answer).toBe(false);
+    act(() => {
+      answer = ask();
+    });
+    await userEvent.click(screen.getByRole('button', { name: "Don't save" }));
+    expect(await answer).toBe(true);
+    // With nothing unsaved, closing goes ahead at once.
+    expect(await ask()).toBe(true);
+  });
+
+  it('keeps the viewer open with the new name after Save As', async () => {
+    const platform = fakePlatform({
+      saveFileAs: vi.fn(() => Promise.resolve({ id: 'copy', name: 'copy.pdf' })),
+    });
+    await openAndEdit(platform);
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true, shiftKey: true });
+    expect(await screen.findByText('copy.pdf')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Note: hi' })).toBeInTheDocument();
   });
 });

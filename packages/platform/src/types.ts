@@ -15,6 +15,12 @@ export interface RecentFile {
   readonly openedAt: Date;
 }
 
+/** Where a document was saved. The id can be used to save there again. */
+export interface SavedFile {
+  readonly id: string;
+  readonly name: string;
+}
+
 export type PlatformKind = 'web' | 'desktop';
 
 /**
@@ -29,8 +35,21 @@ export interface Platform {
   getLaunchFile(): Promise<OpenedFile | null>;
   /** A file the user dragged onto the window. */
   openDroppedFile(file: File): Promise<OpenedFile>;
-  saveFile(file: OpenedFile, bytes: Uint8Array): Promise<void>;
-  saveFileAs(suggestedName: string, bytes: Uint8Array): Promise<OpenedFile | null>;
+  /**
+   * Saves over the file the document came from. Where that isn't possible (a dropped
+   * file, or a browser without write access) it asks where to save instead. Resolves to
+   * null if the user cancels.
+   */
+  saveFile(file: SavedFile, bytes: Uint8Array): Promise<SavedFile | null>;
+  /** Asks where to save a copy. Resolves to null if the user cancels. */
+  saveFileAs(suggestedName: string, bytes: Uint8Array): Promise<SavedFile | null>;
+  /** Tells the platform whether closing now would lose changes. */
+  setUnsavedChanges(unsaved: boolean): void;
+  /**
+   * Called when the user tries to close the app with unsaved changes (desktop only; the
+   * browser shows its own prompt). Resolve to true to close. Returns an unsubscribe.
+   */
+  onCloseRequested(handler: () => Promise<boolean>): () => void;
   print(bytes: Uint8Array): Promise<void>;
   /** Open a link from a document. Always asks the user first. */
   openExternalLink(url: string): Promise<boolean>;

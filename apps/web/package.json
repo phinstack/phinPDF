@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@phinpdf/core": "workspace:*",
+    "@phinpdf/editor": "workspace:*",
     "@phinpdf/platform": "workspace:*",
     "@phinpdf/renderer": "workspace:*",
     "@phinpdf/ui": "workspace:*",

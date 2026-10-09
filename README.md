@@ -3,9 +3,11 @@
 A free, open-source PDF viewer and editor that runs in a web browser and as a desktop app
 (Windows and Linux) from a single codebase. On macOS, use the web version.
 
-**Status:** Phase 2 (viewer) built: open, scroll, page navigation, zoom, rotate, thumbnails,
-bookmarks, search, text selection, print, password-protected files, and drag and drop, in
-the browser and on the desktop. Next: Phase 3, highlights, underlines, and sticky notes. See
+**Status:** Phases 2 and 3 built, so the 1.0 feature set is complete. You can open, scroll,
+navigate, zoom, rotate, search, select text, print, and open password-protected files. You
+can also highlight and underline text, add sticky notes, edit comments, undo and redo, and
+save. Annotations are saved as standard PDF annotations that Acrobat, Edge, Okular, Evince,
+Chrome, and Firefox can read. Next: hardening, security assessment, and user testing. See
 [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) for the roadmap.
 
 ## Quick start

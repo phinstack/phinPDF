@@ -1,14 +1,18 @@
+import type { PageGeometry } from '@phinpdf/core';
 import {
+  AnnotationMode,
   getDocument,
   GlobalWorkerOptions,
   InvalidPDFException,
   PasswordException,
   PasswordResponses,
+  PDFDateString,
   TextLayer,
   type PDFDocumentLoadingTask,
   type PDFDocumentProxy,
   type PDFPageProxy,
 } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { toLoadedAnnotation, type LoadedAnnotation, type RawAnnotation } from './annotations.ts';
 import { OpenError } from './errors.ts';
 import { resolveOutline, type OutlineNode, type RawOutlineItem } from './outline.ts';
 
@@ -159,6 +163,8 @@ export class RenderDocument {
   /** Renders and text extractions in progress (cleanup must wait for them). */
   #active = 0;
   #cleanupPending = false;
+  /** Per page: the editable annotations, read once and hidden from PDF.js's drawing. */
+  readonly #annotations = new Map<number, Promise<LoadedAnnotation[]>>();
 
   constructor(task: PDFDocumentLoadingTask, doc: PDFDocumentProxy) {
     this.#task = task;
@@ -204,6 +210,62 @@ export class RenderDocument {
     return results.map((size) => (previous = size ?? previous));
   }
 
+  /** The page's crop box and own rotation, for mapping between PDF and screen space. */
+  async getPageGeometry(pageNumber: number): Promise<PageGeometry> {
+    const page = await this.#getPage(pageNumber);
+    const [x0, y0, x1, y1] = page.view as [number, number, number, number];
+    return { view: [x0, y0, x1, y1], rotate: normalizeRotation(page.rotate) };
+  }
+
+  /** Geometry of every page. Pages that fail to load get US Letter. */
+  async getPageGeometries(signal?: AbortSignal): Promise<PageGeometry[]> {
+    const results: PageGeometry[] = [];
+    const batch = 32;
+    for (let start = 1; start <= this.numPages; start += batch) {
+      signal?.throwIfAborted();
+      const end = Math.min(this.numPages, start + batch - 1);
+      const numbers = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+      results.push(
+        ...(await Promise.all(
+          numbers.map((n) =>
+            this.getPageGeometry(n).catch((): PageGeometry => ({
+              view: [0, 0, 612, 792],
+              rotate: 0,
+            })),
+          ),
+        )),
+      );
+    }
+    signal?.throwIfAborted();
+    return results;
+  }
+
+  /**
+   * The highlights, underlines, and notes on a page, which phinPDF draws and edits itself.
+   * From the first call on, PDF.js stops drawing them on the canvas. Other annotation
+   * types are left to PDF.js. A page whose annotations can't be read has none.
+   */
+  getAnnotations(pageNumber: number): Promise<LoadedAnnotation[]> {
+    let loaded = this.#annotations.get(pageNumber);
+    if (!loaded) {
+      loaded = this.#loadAnnotations(pageNumber).catch(() => []);
+      this.#annotations.set(pageNumber, loaded);
+    }
+    return loaded;
+  }
+
+  async #loadAnnotations(pageNumber: number): Promise<LoadedAnnotation[]> {
+    const page = await this.#getPage(pageNumber);
+    const raw = (await page.getAnnotations({ intent: 'display' })) as RawAnnotation[];
+    const parseDate = (date: string) => PDFDateString.toDateObject(date);
+    const loaded = raw.flatMap((r) => toLoadedAnnotation(r, pageNumber - 1, parseDate) ?? []);
+    const storage = this.#doc.annotationStorage;
+    for (const { sourceId } of loaded) {
+      storage.setValue(sourceId, { noView: true, noPrint: true });
+    }
+    return loaded;
+  }
+
   /** Renders a page into a canvas, sizing the canvas for sharp output on HiDPI screens. */
   async renderPage(
     pageNumber: number,
@@ -212,6 +274,8 @@ export class RenderDocument {
   ): Promise<void> {
     signal?.throwIfAborted();
     const page = await this.#getPage(pageNumber);
+    // Editable annotations must be hidden before the first draw, or they would show twice.
+    await this.getAnnotations(pageNumber);
     signal?.throwIfAborted();
     const css = this.#viewport(page, scale, rotation);
     const ratio = cappedPixelRatio(css.width, css.height, pixelRatio);
@@ -220,7 +284,8 @@ export class RenderDocument {
     canvas.height = Math.floor(viewport.height);
     canvas.style.width = `${String(Math.floor(css.width))}px`;
     canvas.style.height = `${String(Math.floor(css.height))}px`;
-    const task = page.render({ canvas, viewport });
+    // ENABLE_STORAGE applies the hidden flags set in getAnnotations().
+    const task = page.render({ canvas, viewport, annotationMode: AnnotationMode.ENABLE_STORAGE });
     const onAbort = (): void => {
       task.cancel();
     };

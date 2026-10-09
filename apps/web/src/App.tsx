@@ -1,33 +1,66 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Editor } from '@phinpdf/editor';
 import type { OpenedFile, Platform } from '@phinpdf/platform';
 import { OpenError, type RenderDocument } from '@phinpdf/renderer';
-import { PasswordDialog } from '@phinpdf/ui';
+import { PasswordDialog, UnsavedChangesDialog } from '@phinpdf/ui';
 import { errorMessage } from './error-message.ts';
 import { Icon } from './icons.tsx';
-import { Viewer } from './viewer/Viewer.tsx';
+import { Viewer, type SaveDocument } from './viewer/Viewer.tsx';
 
 export type OpenDocument = (bytes: Uint8Array, password?: string) => Promise<RenderDocument>;
 
 export interface AppProps {
   readonly platform: Platform;
   readonly openDocument: OpenDocument;
+  readonly editor: Editor;
 }
 
 type Session =
   | { readonly kind: 'empty' }
   | { readonly kind: 'loading'; readonly name: string }
   | { readonly kind: 'password'; readonly file: OpenedFile; readonly incorrect: boolean }
-  | { readonly kind: 'ready'; readonly file: OpenedFile; readonly doc: RenderDocument }
+  | {
+      readonly kind: 'ready';
+      /** Identifies this opened document; stays the same when Save As renames the file. */
+      readonly key: number;
+      readonly file: OpenedFile;
+      readonly doc: RenderDocument;
+      readonly password: string | undefined;
+    }
   | { readonly kind: 'error'; readonly message: string };
+
+let nextSessionKey = 0;
 
 function hasFiles(event: DragEvent): boolean {
   return event.dataTransfer?.types.includes('Files') ?? false;
 }
 
-export function App({ platform, openDocument }: AppProps) {
+export function App({ platform, openDocument, editor }: AppProps) {
   const [session, setSession] = useState<Session>({ kind: 'empty' });
   const [dragging, setDragging] = useState(false);
   const docRef = useRef<RenderDocument | null>(null);
+  const dirtyRef = useRef(false);
+  const saveRef = useRef<SaveDocument | null>(null);
+  // An action (open another file, close the window) waiting on the unsaved-changes prompt.
+  const [pending, setPending] = useState<{ run: () => void; cancel?: () => void } | null>(null);
+  const [savingForPrompt, setSavingForPrompt] = useState(false);
+
+  const onDirtyChange = useCallback(
+    (value: boolean) => {
+      dirtyRef.current = value;
+      platform.setUnsavedChanges(value);
+    },
+    [platform],
+  );
+
+  /** Runs `action` now, or after the user decides what to do with unsaved changes. */
+  const guard = useCallback((action: () => void, cancel?: () => void) => {
+    if (!dirtyRef.current) {
+      action();
+      return;
+    }
+    setPending(cancel ? { run: action, cancel } : { run: action });
+  }, []);
 
   const replaceDocument = useCallback((doc: RenderDocument | null) => {
     const previous = docRef.current;
@@ -42,7 +75,9 @@ export function App({ platform, openDocument }: AppProps) {
       try {
         const doc = await openDocument(file.bytes, password);
         replaceDocument(doc);
-        setSession({ kind: 'ready', file, doc });
+        onDirtyChange(false);
+        nextSessionKey += 1;
+        setSession({ kind: 'ready', key: nextSessionKey, file, doc, password });
       } catch (error) {
         if (
           error instanceof OpenError &&
@@ -55,7 +90,7 @@ export function App({ platform, openDocument }: AppProps) {
         setSession({ kind: 'error', message: errorMessage(error) });
       }
     },
-    [openDocument, replaceDocument],
+    [openDocument, replaceDocument, onDirtyChange],
   );
 
   const fail = useCallback((error: unknown) => {
@@ -63,8 +98,29 @@ export function App({ platform, openDocument }: AppProps) {
   }, []);
 
   const handleOpen = useCallback(() => {
-    platform.openFile().then(load, fail);
-  }, [platform, load, fail]);
+    guard(() => {
+      platform.openFile().then(load, fail);
+    });
+  }, [platform, load, fail, guard]);
+
+  // Desktop: closing the window with unsaved changes asks first.
+  useEffect(
+    () =>
+      platform.onCloseRequested(
+        () =>
+          new Promise<boolean>((resolve) => {
+            guard(
+              () => {
+                resolve(true);
+              },
+              () => {
+                resolve(false);
+              },
+            );
+          }),
+      ),
+    [platform, guard],
+  );
 
   // Open the file the app was launched with ("Open with" / double-click on desktop).
   useEffect(() => {
@@ -109,7 +165,11 @@ export function App({ platform, openDocument }: AppProps) {
       depth = 0;
       setDragging(false);
       const file = event.dataTransfer?.files[0];
-      if (file) platform.openDroppedFile(file).then(load, fail);
+      if (file) {
+        guard(() => {
+          platform.openDroppedFile(file).then(load, fail);
+        });
+      }
     };
     window.addEventListener('dragenter', onEnter);
     window.addEventListener('dragleave', onLeave);
@@ -121,13 +181,42 @@ export function App({ platform, openDocument }: AppProps) {
       window.removeEventListener('dragover', onOver);
       window.removeEventListener('drop', onDrop);
     };
-  }, [platform, load, fail]);
+  }, [platform, load, fail, guard]);
 
   useEffect(
     () => () => {
       replaceDocument(null);
     },
     [replaceDocument],
+  );
+
+  const onSaved = useCallback((file: OpenedFile) => {
+    setSession((s) => (s.kind === 'ready' ? { ...s, file } : s));
+  }, []);
+
+  const prompt = pending && session.kind === 'ready' && (
+    <UnsavedChangesDialog
+      fileName={session.file.name}
+      saving={savingForPrompt}
+      onCancel={() => {
+        pending.cancel?.();
+        setPending(null);
+      }}
+      onDiscard={() => {
+        setPending(null);
+        onDirtyChange(false);
+        pending.run();
+      }}
+      onSave={() => {
+        setSavingForPrompt(true);
+        void (saveRef.current?.() ?? Promise.resolve(false)).then((saved) => {
+          setSavingForPrompt(false);
+          if (!saved) return;
+          setPending(null);
+          pending.run();
+        });
+      }}
+    />
   );
 
   const overlay = dragging && (
@@ -140,13 +229,19 @@ export function App({ platform, openDocument }: AppProps) {
     return (
       <>
         <Viewer
-          key={session.file.id}
+          key={session.key}
           doc={session.doc}
-          fileName={session.file.name}
+          file={session.file}
+          password={session.password}
           platform={platform}
+          editor={editor}
           onOpen={handleOpen}
+          onSaved={onSaved}
+          onDirtyChange={onDirtyChange}
+          saveRef={saveRef}
         />
         {overlay}
+        {prompt}
       </>
     );
   }

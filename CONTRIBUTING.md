@@ -42,6 +42,7 @@ First run of `pnpm e2e`: install browsers with
 | `apps/desktop` | Tauri shell: Rust commands, capabilities, installers |
 | `packages/core` | Document model and undo/redo command stack. No DOM |
 | `packages/renderer` | PDF.js wrapper with secure defaults |
+| `packages/editor` | PDFium-WASM in a Web Worker: writes annotations and saves (ADR-0004) |
 | `packages/platform` | File open/save, links, printing for web and desktop (ADR-0005) |
 | `packages/ui` | Shared React components |
 | `test-corpus` | 60 generated test PDFs and their expected behaviour |
