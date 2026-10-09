@@ -34,13 +34,16 @@ async function selectWord(page: Page, text: string): Promise<void> {
     .toBeTruthy();
 }
 
-/** Drags across a text span to select it. */
+/**
+ * Drags across part of a text span to select it. Without the text layer's endOfContent
+ * cover, the selection could jump across many lines when the pointer crossed a gap.
+ */
 async function dragAcross(page: Page, target: Locator): Promise<void> {
   const box = await target.boundingBox();
   if (!box) throw new Error('no box');
   await page.mouse.move(box.x + 1, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width - 1, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.move(box.x + 300, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
 }
 

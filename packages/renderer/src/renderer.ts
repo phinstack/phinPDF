@@ -65,6 +65,34 @@ export function normalizeRotation(degrees: number): 0 | 90 | 180 | 270 {
   return r as 0 | 90 | 180 | 270;
 }
 
+/**
+ * Text layers whose selection is in progress. While a drag is selecting, the layer's
+ * `endOfContent` element covers the whole page, so a pointer between words doesn't make
+ * the browser jump the selection to the end of the page. This is what PDF.js's own viewer
+ * does (TextLayerBuilder); the core TextLayer class leaves it to the viewer.
+ */
+const boundTextLayers = new WeakSet<HTMLElement>();
+const selectingTextLayers = new Set<HTMLElement>();
+let selectionListenersAdded = false;
+
+function bindSelectionHelpers(container: HTMLElement): void {
+  if (!boundTextLayers.has(container)) {
+    boundTextLayers.add(container);
+    container.addEventListener('mousedown', () => {
+      container.classList.add('selecting');
+      selectingTextLayers.add(container);
+    });
+  }
+  if (selectionListenersAdded) return;
+  selectionListenersAdded = true;
+  const reset = (): void => {
+    for (const layer of selectingTextLayers) layer.classList.remove('selecting');
+    selectingTextLayers.clear();
+  };
+  document.addEventListener('pointerup', reset);
+  window.addEventListener('blur', reset);
+}
+
 let assets: RendererAssets = {};
 
 export function configureRenderer(next: RendererAssets): void {
@@ -333,6 +361,10 @@ export class RenderDocument {
       signal?.removeEventListener('abort', onAbort);
       this.#end();
     }
+    const end = document.createElement('div');
+    end.className = 'endOfContent';
+    container.append(end);
+    bindSelectionHelpers(container);
     const strings = layer.textContentItemsStr;
     return {
       items: strings.map((str, i) => ({

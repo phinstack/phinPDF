@@ -23,9 +23,15 @@ async function waitForRender(): Promise<string> {
   }
 }
 
+/** Expects `fn` to be refused. A call that never settles counts as refused, not a hang. */
 async function mustFail(fn: () => unknown): Promise<string> {
   try {
-    await fn();
+    const hung = new Promise((_, reject) =>
+      setTimeout(() => {
+        reject(new Error('HUNG'));
+      }, 5000),
+    );
+    await Promise.race([fn(), hung]);
     return 'ALLOWED';
   } catch (error) {
     return `blocked: ${String(error).slice(0, 80)}`;
@@ -42,6 +48,12 @@ export async function runDesktopSmoke(): Promise<void> {
     result['shellPlugin'] = await mustFail(() => invoke('plugin:shell|execute', { program: 'sh' }));
     result['dialogPluginFromWebview'] = await mustFail(() => invoke('plugin:dialog|open', {}));
     result['readUnissuedToken'] = await mustFail(() => invoke('read_file', { id: 'forged-token' }));
+    // Saving back to the launch file (token file-1) works, and writes the same bytes.
+    const original = new Uint8Array(await invoke<ArrayBuffer>('read_file', { id: 'file-1' }));
+    const saved = await invoke<{ size: number }>('save_file', original, {
+      headers: { 'x-file-id': 'file-1' },
+    });
+    result['saveLaunchFile'] = saved.size === original.length ? 'saved' : 'ALLOWED-WRONG-SIZE';
     const pdfBytes = new TextEncoder().encode('%PDF-1.7\n');
     result['saveUnissuedToken'] = await mustFail(() =>
       invoke('save_file', pdfBytes, { headers: { 'x-file-id': 'forged-token' } }),
@@ -57,7 +69,7 @@ export async function runDesktopSmoke(): Promise<void> {
       // eslint-disable-next-line no-eval
       (0, eval)('1');
     });
-    const leaked = Object.entries(result).filter(([, v]) => v === 'ALLOWED');
+    const leaked = Object.entries(result).filter(([, v]) => String(v).startsWith('ALLOWED'));
     result['ok'] = leaked.length === 0;
   } catch (error) {
     result['ok'] = false;

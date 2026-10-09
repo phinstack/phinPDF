@@ -58,6 +58,10 @@
   user-select: none;
 }
 
+.textLayer.selecting .endOfContent {
+  top: 0;
+}
+
 .textLayer[data-main-rotation='90'] {
   transform: rotate(90deg) translateY(-100%);
 }
