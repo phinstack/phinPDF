@@ -18,7 +18,7 @@
     "@phinpdf/platform": "workspace:*",
     "@phinpdf/renderer": "workspace:*",
     "@phinpdf/ui": "workspace:*",
-    "@tauri-apps/api": "2.12.1",
+    "@tauri-apps/api": "2.12.3",
     "pdfjs-dist": "6.4.299",
     "react": "19.3.0",
     "react-dom": "19.3.0"
